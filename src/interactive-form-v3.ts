@@ -168,7 +168,7 @@ export function createA2UIFormComponent(
           const prefix = isFocused ? theme.fg("success", "> ") : "  ";
           const value = fieldValues.get(fieldId) || "";
           const displayValue = value || theme.fg("dim", tf.placeholder || "(empty)");
-          add(prefix + theme.fg("info", label + ":"));
+          add(prefix + theme.fg("text", label + ":"));
           add("  " + displayValue);
           add("");
         } else if (comp.component === "Checkbox") {
@@ -177,13 +177,13 @@ export function createA2UIFormComponent(
           const checkbox = checked ? "☑ " : "☐ ";
           const label = cb.label || fieldId;
           const prefix = isFocused ? theme.fg("success", "> ") : "  ";
-          add(prefix + theme.fg("info", checkbox + label));
+          add(prefix + theme.fg("text", checkbox + label));
           add("");
         } else if (comp.component === "RadioGroup") {
           const rg = comp as RadioGroupComponent;
           const state = fieldStates.get(fieldId) || { selected: "", expanded: false };
           const prefix = isFocused ? theme.fg("success", "> ") : "  ";
-          add(prefix + theme.fg("info", rg.label || "Options"));
+          add(prefix + theme.fg("text", rg.label || "Options"));
           for (const option of rg.options) {
             const isSelected = option.value === state.selected;
             const radio = isSelected ? "◉ " : "○ ";
@@ -198,14 +198,14 @@ export function createA2UIFormComponent(
           const prefix = isFocused ? theme.fg("success", "> ") : "  ";
           const label = sd.label || fieldId;
           const displayValue = selected?.label || sd.placeholder || "(select)";
-          add(prefix + theme.fg("info", label + ":"));
+          add(prefix + theme.fg("text", label + ":"));
           add("  " + theme.fg("muted", displayValue + (state.expanded ? " ▲" : " ▼")));
           add("");
         } else if (comp.component === "List") {
           const list = comp as ListComponent;
           const state = fieldStates.get(fieldId) || { selected: "", scrollIndex: 0 };
           const prefix = isFocused ? theme.fg("success", "> ") : "  ";
-          add(prefix + theme.fg("info", list.label || "Items"));
+          add(prefix + theme.fg("text", list.label || "Items"));
           const startIdx = state.scrollIndex;
           const endIdx = Math.min(startIdx + 5, list.items.length);
           for (let j = startIdx; j < endIdx; j++) {
@@ -227,7 +227,7 @@ export function createA2UIFormComponent(
 
           if (imgState.loading) {
             // Show loading state
-            add(prefix + theme.fg("info", `[IMAGE LOADING...] ${label}`));
+            add(prefix + theme.fg("text", `[IMAGE LOADING...] ${label}`));
             add("");
           } else if (imgState.error) {
             // Show error fallback
