@@ -7,7 +7,7 @@
 
 export interface A2UIComponent {
   id: string;
-  component: "Text" | "Button" | "TextField" | "Card" | "Column" | "Row";
+  component: "Text" | "Button" | "TextField" | "Card" | "Column" | "Row" | "Checkbox" | "RadioGroup" | "SelectDropdown" | "List" | "Image";
   attributes?: Record<string, any>;
 }
 
@@ -68,7 +68,75 @@ export interface RowComponent extends A2UIComponent {
   };
 }
 
-// ===== Message Types =====
+// ===== Phase 2A Components =====
+
+export interface CheckboxComponent extends A2UIComponent {
+  component: "Checkbox";
+  label?: string;
+  checked?: boolean;
+  attributes?: {
+    disabled?: boolean;
+  };
+}
+
+export interface RadioGroupComponent extends A2UIComponent {
+  component: "RadioGroup";
+  label?: string;
+  selected?: string;
+  options: Array<{
+    label: string;
+    value: string;
+  }>;
+  attributes?: {
+    disabled?: boolean;
+  };
+}
+
+export interface SelectDropdownComponent extends A2UIComponent {
+  component: "SelectDropdown";
+  label?: string;
+  selected?: string;
+  options: Array<{
+    label: string;
+    value: string;
+  }>;
+  placeholder?: string;
+  attributes?: {
+    searchable?: boolean;
+    disabled?: boolean;
+  };
+}
+
+export interface ListComponent extends A2UIComponent {
+  component: "List";
+  label?: string;
+  selected?: string;
+  items: Array<{
+    id: string;
+    label: string;
+  }>;
+  attributes?: {
+    disabled?: boolean;
+  };
+}
+
+export interface ImageComponent extends A2UIComponent {
+  component: "Image";
+  source: {
+    type: "url" | "base64";
+    url?: string;
+    data?: string;
+  };
+  size?: "small" | "medium" | "large";
+  alt?: string;
+  attributes?: {
+    maxWidthCells?: number;
+    maxHeightCells?: number;
+  };
+}
+
+// ===== End Phase 2A Components =====
+
 
 export interface A2UIMessage {
   version: "v0.9";
