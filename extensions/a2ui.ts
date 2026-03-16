@@ -11,7 +11,7 @@ import type { A2UIServerMessage } from "../src/types";
 import { createA2UIBeforeAgentStartHandler, injectA2UISchema } from "../src/prompting";
 import { parseA2UIResponse, extractSurfaceId, extractComponents } from "../src/parser";
 import { validateA2UIMessages } from "../src/validation";
-import { createA2UIFormComponent, type FormData } from "../src/interactive-form-v2";
+import { createA2UIFormComponent, type FormData } from "../src/interactive-form-v3";
 import {
   getPhase2ASurveyExample,
   getPhase2ASettingsExample,

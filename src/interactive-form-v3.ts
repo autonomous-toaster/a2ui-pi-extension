@@ -1,0 +1,496 @@
+/**
+ * Interactive A2UI Form Component - V3 with Image Support
+ * 
+ * Enhanced version that:
+ * - Handles async image fetching with loading states
+ * - Uses pi-tui Image component for proper rendering
+ * - Maintains backward compatibility with V2
+ * - Graceful fallback for image errors
+ */
+
+import { matchesKey, Key, truncateToWidth, Image as TuiImage } from "@mariozechner/pi-tui";
+import type { 
+  TextFieldComponent, 
+  ButtonComponent, 
+  TextComponent, 
+  CheckboxComponent,
+  RadioGroupComponent,
+  SelectDropdownComponent,
+  ListComponent,
+  ImageComponent,
+  A2UIComponent 
+} from "./types";
+import { convertImageUrlToBase64, clearImageCache } from "./image-fetcher";
+
+export interface FormData {
+  [fieldId: string]: string;
+}
+
+// Image cache per session
+interface ImageState {
+  base64?: string;
+  error?: string;
+  loading: boolean;
+}
+
+/**
+ * Create an interactive form component for ctx.ui.custom()
+ * 
+ * Enhanced to:
+ * - Fetch images from URLs asynchronously
+ * - Show loading states while fetching
+ * - Gracefully handle image errors
+ * - Render using pi-tui Image component
+ */
+export function createA2UIFormComponent(
+  components: Map<string, A2UIComponent>,
+  theme: any
+) {
+  return (tui: any, _theme: any, _kb: any, done: (data: FormData | null) => void) => {
+    // === STATE ===
+    const fieldIds: string[] = [];
+    const buttonIds: string[] = [];
+    let focusedFieldIndex = 0;
+    let focusedButtonIndex = -1;
+    const fieldValues = new Map<string, string>();
+    const fieldStates = new Map<string, any>();
+    const imageStates = new Map<string, ImageState>(); // NEW: Track image loading state
+    const renderedImages = new Map<string, TuiImage>(); // NEW: Cache rendered TuiImage objects
+    let cachedLines: string[] | undefined;
+    let cachedWidth: number | undefined;
+
+    // Scan for interactive components
+    for (const [id, comp] of components) {
+      const type = comp.component;
+      if (type === "TextField" || type === "Checkbox" || type === "RadioGroup" || 
+          type === "SelectDropdown" || type === "List" || type === "Image") {
+        fieldIds.push(id);
+        if (type === "TextField") {
+          fieldValues.set(id, (comp as TextFieldComponent).value || "");
+        } else if (type === "Checkbox") {
+          fieldStates.set(id, (comp as CheckboxComponent).checked || false);
+        } else if (type === "RadioGroup") {
+          fieldStates.set(id, { selected: (comp as RadioGroupComponent).selected || "", expanded: false, scrollIndex: 0 });
+        } else if (type === "SelectDropdown") {
+          fieldStates.set(id, { selected: (comp as SelectDropdownComponent).selected || "", expanded: false, searchText: "", scrollIndex: 0 });
+        } else if (type === "List") {
+          fieldStates.set(id, { selected: (comp as ListComponent).selected || "", scrollIndex: 0 });
+        } else if (type === "Image") {
+          // Initialize image with loading state
+          imageStates.set(id, { loading: true });
+          // Start async fetch
+          const imageComp = comp as ImageComponent;
+          if (imageComp.source.type === "url" && imageComp.source.url) {
+            fetchAndCacheImage(id, imageComp.source.url);
+          } else if (imageComp.source.type === "base64" && imageComp.source.data) {
+            imageStates.set(id, { base64: imageComp.source.data, loading: false });
+          }
+        }
+      } else if (comp.component === "Button") {
+        buttonIds.push(id);
+      }
+    }
+
+    // === ASYNC IMAGE FETCHING ===
+    async function fetchAndCacheImage(fieldId: string, url: string) {
+      try {
+        const result = await convertImageUrlToBase64(url);
+        if (result.base64) {
+          imageStates.set(fieldId, { base64: result.base64, loading: false });
+          // Create TuiImage component
+          try {
+            const tuiImage = new TuiImage(
+              result.base64,
+              getMimeTypeFromUrl(url),
+              theme,
+              { maxWidthCells: 40, maxHeightCells: 20 }
+            );
+            renderedImages.set(fieldId, tuiImage);
+          } catch (renderErr) {
+            // Fall back to text if TuiImage creation fails
+            imageStates.set(fieldId, { 
+              error: `Failed to render: ${renderErr instanceof Error ? renderErr.message : 'unknown error'}`,
+              loading: false 
+            });
+          }
+        } else {
+          imageStates.set(fieldId, { error: result.error, loading: false });
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        imageStates.set(fieldId, { error: msg, loading: false });
+      }
+      refresh();
+    }
+
+    function getMimeTypeFromUrl(url: string): string {
+      const ext = url.split("?")[0].split(".").pop()?.toLowerCase() || "";
+      const mimeTypes: Record<string, string> = {
+        png: "image/png",
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        gif: "image/gif",
+        webp: "image/webp",
+      };
+      return mimeTypes[ext] || "image/png";
+    }
+
+    // === HELPERS ===
+    function refresh() {
+      cachedLines = undefined;
+      cachedWidth = undefined;
+      tui.requestRender();
+    }
+
+    // === RENDER ===
+    function render(width: number): string[] {
+      if (cachedLines && cachedWidth === width) {
+        return cachedLines;
+      }
+
+      const lines: string[] = [];
+      const add = (s: string) => lines.push(truncateToWidth(s, width));
+
+      // Top border
+      add(theme.fg("accent", "┌" + "─".repeat(Math.max(0, width - 2)) + "┐"));
+      add(theme.fg("accent", "  Interactive Form"));
+      add("");
+
+      // Render fields
+      for (let i = 0; i < fieldIds.length; i++) {
+        const fieldId = fieldIds[i];
+        const comp = components.get(fieldId)!;
+        const isFocused = focusedButtonIndex === -1 && focusedFieldIndex === i;
+
+        if (comp.component === "TextField") {
+          const tf = comp as TextFieldComponent;
+          const label = tf.label || fieldId;
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          const value = fieldValues.get(fieldId) || "";
+          const displayValue = value || theme.fg("dim", tf.placeholder || "(empty)");
+          add(prefix + theme.fg("info", label + ":"));
+          add("  " + displayValue);
+          add("");
+        } else if (comp.component === "Checkbox") {
+          const cb = comp as CheckboxComponent;
+          const checked = fieldStates.get(fieldId) || false;
+          const checkbox = checked ? "☑ " : "☐ ";
+          const label = cb.label || fieldId;
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          add(prefix + theme.fg("info", checkbox + label));
+          add("");
+        } else if (comp.component === "RadioGroup") {
+          const rg = comp as RadioGroupComponent;
+          const state = fieldStates.get(fieldId) || { selected: "", expanded: false };
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          add(prefix + theme.fg("info", rg.label || "Options"));
+          for (const option of rg.options) {
+            const isSelected = option.value === state.selected;
+            const radio = isSelected ? "◉ " : "○ ";
+            const color = isSelected ? "success" : "muted";
+            add("    " + theme.fg(color, radio + option.label));
+          }
+          add("");
+        } else if (comp.component === "SelectDropdown") {
+          const sd = comp as SelectDropdownComponent;
+          const state = fieldStates.get(fieldId) || { selected: "", expanded: false };
+          const selected = sd.options.find((o) => o.value === state.selected);
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          const label = sd.label || fieldId;
+          const displayValue = selected?.label || sd.placeholder || "(select)";
+          add(prefix + theme.fg("info", label + ":"));
+          add("  " + theme.fg("muted", displayValue + (state.expanded ? " ▲" : " ▼")));
+          add("");
+        } else if (comp.component === "List") {
+          const list = comp as ListComponent;
+          const state = fieldStates.get(fieldId) || { selected: "", scrollIndex: 0 };
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          add(prefix + theme.fg("info", list.label || "Items"));
+          const startIdx = state.scrollIndex;
+          const endIdx = Math.min(startIdx + 5, list.items.length);
+          for (let j = startIdx; j < endIdx; j++) {
+            const item = list.items[j];
+            const isSelected = item.id === state.selected;
+            const marker = isSelected ? "▶ " : "  ";
+            const color = isSelected ? "success" : "muted";
+            add("    " + theme.fg(color, marker + item.label));
+          }
+          if (list.items.length > 5) {
+            add(theme.fg("dim", `  ↓ ${list.items.length - endIdx} more`));
+          }
+          add("");
+        } else if (comp.component === "Image") {
+          const image = comp as ImageComponent;
+          const imgState = imageStates.get(fieldId) || { loading: true };
+          const label = image.alt || fieldId;
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+
+          if (imgState.loading) {
+            // Show loading state
+            add(prefix + theme.fg("info", `[IMAGE LOADING...] ${label}`));
+            add("");
+          } else if (imgState.error) {
+            // Show error fallback
+            add(prefix + theme.fg("warning", `[IMAGE ERROR] ${label}`));
+            add(theme.fg("dim", `  ${imgState.error}`));
+            add("");
+          } else if (imgState.base64 && renderedImages.has(fieldId)) {
+            // Render using TuiImage
+            const tuiImg = renderedImages.get(fieldId)!;
+            const imgLines = tuiImg.render(width - 2);
+            for (const line of imgLines) {
+              add("  " + line);
+            }
+            add("");
+          } else if (imgState.base64) {
+            // Have base64 but TuiImage hasn't been created yet
+            add(prefix + theme.fg("muted", `[IMAGE] ${label}`));
+            add("");
+          }
+        }
+      }
+
+      // Buttons
+      if (buttonIds.length > 0) {
+        add(theme.fg("accent", "─".repeat(Math.max(0, width - 2))));
+        const buttonTexts: string[] = [];
+        for (let i = 0; i < buttonIds.length; i++) {
+          const buttonId = buttonIds[i];
+          const btn = components.get(buttonId) as ButtonComponent;
+          let label = btn?.id || "Button";
+
+          if (btn?.child) {
+            const child = components.get(btn.child) as TextComponent;
+            if (child) label = child.text;
+          }
+
+          const isFocused = focusedButtonIndex === i;
+          const prefix = isFocused ? theme.fg("success", "[ ") : "[ ";
+          const suffix = isFocused ? theme.fg("success", " ]") : " ]";
+          const color = isFocused ? "success" : "info";
+          buttonTexts.push(prefix + theme.fg(color, label) + suffix);
+        }
+        add(buttonTexts.join("   "));
+      }
+
+      // Bottom border
+      add(theme.fg("accent", "└" + "─".repeat(Math.max(0, width - 2)) + "┘"));
+
+      cachedLines = lines;
+      cachedWidth = width;
+      return lines;
+    }
+
+    // === INPUT HANDLING ===
+    function handleInput(key: Key) {
+      const focusedComp = focusedButtonIndex === -1 ? components.get(fieldIds[focusedFieldIndex]) : null;
+      const isList = focusedComp?.component === "List";
+      const isRadioGroup = focusedComp?.component === "RadioGroup";
+
+      // SPECIAL KEYS: Check before anything else
+      if (matchesKey(key, Key.Escape)) {
+        clearImageCache();
+        done(null);
+        return;
+      }
+
+      if (matchesKey(key, Key.Tab)) {
+        if (matchesKey(key, Key.ShiftTab) || key.shift) {
+          // Shift+Tab: previous field
+          focusedButtonIndex = -1;
+          focusedFieldIndex = (focusedFieldIndex - 1 + fieldIds.length) % fieldIds.length;
+        } else {
+          // Tab: next field or first button
+          if (focusedButtonIndex >= 0) {
+            focusedButtonIndex = (focusedButtonIndex + 1) % buttonIds.length;
+          } else if (focusedFieldIndex < fieldIds.length - 1) {
+            focusedFieldIndex++;
+          } else if (buttonIds.length > 0) {
+            focusedButtonIndex = 0;
+          }
+        }
+        refresh();
+        return;
+      }
+
+      if (matchesKey(key, Key.Enter)) {
+        if (focusedButtonIndex >= 0) {
+          const buttonId = buttonIds[focusedButtonIndex];
+          const btn = components.get(buttonId) as ButtonComponent;
+          if (btn?.id === "submit_btn" || btn?.child?.includes("submit")) {
+            clearImageCache();
+            // Collect form data
+            const data: FormData = {};
+            for (const fieldId of fieldIds) {
+              const comp = components.get(fieldId)!;
+              if (comp.component === "TextField") {
+                data[fieldId] = fieldValues.get(fieldId) || "";
+              } else if (comp.component === "Checkbox") {
+                data[fieldId] = String(fieldStates.get(fieldId) || false);
+              } else if (comp.component === "RadioGroup" || comp.component === "SelectDropdown" || comp.component === "List") {
+                data[fieldId] = (fieldStates.get(fieldId) || {}).selected || "";
+              }
+            }
+            done(data);
+            return;
+          }
+        } else {
+          // In field - move to next
+          focusedFieldIndex = Math.min(focusedFieldIndex + 1, fieldIds.length - 1);
+          if (focusedFieldIndex === fieldIds.length - 1 && buttonIds.length > 0) {
+            focusedButtonIndex = 0;
+          }
+        }
+        refresh();
+        return;
+      }
+
+      // Arrow keys - Handle component-specific navigation
+      if (matchesKey(key, Key.ArrowDown)) {
+        if (isList) {
+          const state = fieldStates.get(fieldIds[focusedFieldIndex]);
+          const comp = components.get(fieldIds[focusedFieldIndex]) as ListComponent;
+          state.scrollIndex = Math.min(state.scrollIndex + 1, Math.max(0, comp.items.length - 5));
+          state.selected = comp.items[Math.min(focusedFieldIndex + state.scrollIndex, comp.items.length - 1)]?.id || state.selected;
+          refresh();
+          return;
+        } else if (isRadioGroup) {
+          const state = fieldStates.get(fieldIds[focusedFieldIndex]);
+          const comp = components.get(fieldIds[focusedFieldIndex]) as RadioGroupComponent;
+          const currentIdx = comp.options.findIndex((o) => o.value === state.selected);
+          const nextIdx = Math.min(currentIdx + 1, comp.options.length - 1);
+          state.selected = comp.options[nextIdx]?.value || state.selected;
+          refresh();
+          return;
+        } else {
+          focusedButtonIndex = -1;
+          focusedFieldIndex = Math.min(focusedFieldIndex + 1, fieldIds.length - 1);
+          refresh();
+          return;
+        }
+      }
+
+      if (matchesKey(key, Key.ArrowUp)) {
+        if (isList) {
+          const state = fieldStates.get(fieldIds[focusedFieldIndex]);
+          state.scrollIndex = Math.max(state.scrollIndex - 1, 0);
+          refresh();
+          return;
+        } else if (isRadioGroup) {
+          const state = fieldStates.get(fieldIds[focusedFieldIndex]);
+          const comp = components.get(fieldIds[focusedFieldIndex]) as RadioGroupComponent;
+          const currentIdx = comp.options.findIndex((o) => o.value === state.selected);
+          const nextIdx = Math.max(currentIdx - 1, 0);
+          state.selected = comp.options[nextIdx]?.value || state.selected;
+          refresh();
+          return;
+        } else {
+          focusedButtonIndex = -1;
+          focusedFieldIndex = Math.max(focusedFieldIndex - 1, 0);
+          refresh();
+          return;
+        }
+      }
+
+      // Handle component-specific interactions
+      const currentField = fieldIds[focusedButtonIndex === -1 ? focusedFieldIndex : -1];
+      if (currentField) {
+        const comp = components.get(currentField)!;
+
+        if (comp.component === "TextField") {
+          // Handle backspace
+          if (matchesKey(key, Key.Backspace) || key.charCode === 8 || key.charCode === 127) {
+            const current = fieldValues.get(currentField) || "";
+            fieldValues.set(currentField, current.slice(0, -1));
+            refresh();
+            return;
+          }
+
+          // Handle character input
+          if (key.charCode && key.charCode >= 32 && key.charCode < 127) {
+            const current = fieldValues.get(currentField) || "";
+            fieldValues.set(currentField, current + String.fromCharCode(key.charCode));
+            refresh();
+            return;
+          }
+        }
+
+        if (comp.component === "Checkbox") {
+          if (matchesKey(key, Key.Space)) {
+            const current = fieldStates.get(currentField) || false;
+            fieldStates.set(currentField, !current);
+            refresh();
+            return;
+          }
+        }
+
+        if (comp.component === "RadioGroup") {
+          const state = fieldStates.get(currentField);
+          const rgComp = comp as RadioGroupComponent;
+
+          if (matchesKey(key, Key.Space)) {
+            state.expanded = !state.expanded;
+            refresh();
+            return;
+          }
+
+          if (matchesKey(key, Key.ArrowRight)) {
+            const idx = rgComp.options.findIndex((o) => o.value === state.selected);
+            if (idx < rgComp.options.length - 1) {
+              state.selected = rgComp.options[idx + 1].value;
+            }
+            refresh();
+            return;
+          }
+
+          if (matchesKey(key, Key.ArrowLeft)) {
+            const idx = rgComp.options.findIndex((o) => o.value === state.selected);
+            if (idx > 0) {
+              state.selected = rgComp.options[idx - 1].value;
+            }
+            refresh();
+            return;
+          }
+        }
+
+        if (comp.component === "SelectDropdown") {
+          const state = fieldStates.get(currentField);
+          const sdComp = comp as SelectDropdownComponent;
+
+          if (matchesKey(key, Key.Space)) {
+            state.expanded = !state.expanded;
+            refresh();
+            return;
+          }
+
+          if (state.expanded) {
+            if (matchesKey(key, Key.ArrowDown)) {
+              const idx = sdComp.options.findIndex((o) => o.value === state.selected);
+              if (idx < sdComp.options.length - 1) {
+                state.selected = sdComp.options[idx + 1].value;
+                refresh();
+              }
+              return;
+            }
+
+            if (matchesKey(key, Key.ArrowUp)) {
+              const idx = sdComp.options.findIndex((o) => o.value === state.selected);
+              if (idx > 0) {
+                state.selected = sdComp.options[idx - 1].value;
+                refresh();
+              }
+              return;
+            }
+          }
+        }
+      }
+    }
+
+    // === COMPONENT INTERFACE ===
+    return {
+      render: (width: number) => render(width),
+      handleInput: (key: Key) => handleInput(key),
+      getStatus: () => "Interactive Form",
+    };
+  };
+}

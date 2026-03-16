@@ -127,7 +127,7 @@ export function getTeamSelectionExample(): string {
         "component": "Image",
         "source": {
           "type": "url",
-          "url": "https://avatars.githubusercontent.com/u/1?v=4&s=64"
+          "url": "https://avatars.githubusercontent.com/u/11556?v=4&size=64"
         },
         "size": "small",
         "alt": "Member 1"
@@ -143,7 +143,7 @@ export function getTeamSelectionExample(): string {
         "component": "Image",
         "source": {
           "type": "url",
-          "url": "https://avatars.githubusercontent.com/u/2?v=4&s=64"
+          "url": "https://avatars.githubusercontent.com/u/11556?v=4&size=64"
         },
         "size": "small",
         "alt": "Member 2"
@@ -159,7 +159,7 @@ export function getTeamSelectionExample(): string {
         "component": "Image",
         "source": {
           "type": "url",
-          "url": "https://avatars.githubusercontent.com/u/3?v=4&s=64"
+          "url": "https://avatars.githubusercontent.com/u/264779216?s=400&u=3b359b93a5bae1fa184b74a1b725058a62195493&v=4"
         },
         "size": "small",
         "alt": "Member 3"
