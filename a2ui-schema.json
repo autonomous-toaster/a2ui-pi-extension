@@ -1,6 +1,6 @@
 {
   "version": "v0.9",
-  "description": "Minimal A2UI v0.9 schema for pi extension (5 core components)",
+  "description": "A2UI v0.9 schema with Phase 1 + Phase 2A components",
   "components": {
     "Text": {
       "description": "Display text content",
@@ -23,14 +23,13 @@
       "properties": {
         "id": {"type": "string"},
         "component": {"const": "Button"},
-        "child": {"type": "string", "description": "ID of child component (typically Text)"},
+        "child": {"type": "string"},
         "action": {
           "type": "object",
           "properties": {
             "name": {"type": "string"},
             "context": {"type": "object"}
-          },
-          "required": ["name"]
+          }
         },
         "attributes": {
           "type": "object",
@@ -43,22 +42,12 @@
       "required": ["id", "component"]
     },
     "TextField": {
-      "description": "Text input field with optional data binding",
+      "description": "Text input field",
       "properties": {
         "id": {"type": "string"},
         "component": {"const": "TextField"},
         "label": {"type": "string"},
-        "value": {
-          "oneOf": [
-            {"type": "string"},
-            {
-              "type": "object",
-              "properties": {
-                "path": {"type": "string", "description": "Data path like /form/name"}
-              }
-            }
-          ]
-        },
+        "value": {"type": "string"},
         "placeholder": {"type": "string"},
         "attributes": {
           "type": "object",
@@ -70,6 +59,133 @@
       },
       "required": ["id", "component"]
     },
+    "Checkbox": {
+      "description": "Boolean toggle checkbox",
+      "properties": {
+        "id": {"type": "string"},
+        "component": {"const": "Checkbox"},
+        "label": {"type": "string"},
+        "checked": {"type": "boolean"},
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "required": {"type": "boolean"},
+            "disabled": {"type": "boolean"}
+          }
+        }
+      },
+      "required": ["id", "component", "label"]
+    },
+    "RadioGroup": {
+      "description": "Radio button group for single selection",
+      "properties": {
+        "id": {"type": "string"},
+        "component": {"const": "RadioGroup"},
+        "label": {"type": "string"},
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "string"},
+              "label": {"type": "string"},
+              "value": {"type": "string"}
+            },
+            "required": ["label", "value"]
+          }
+        },
+        "selected": {"type": "string"},
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "disabled": {"type": "boolean"}
+          }
+        }
+      },
+      "required": ["id", "component", "options"]
+    },
+    "SelectDropdown": {
+      "description": "Searchable dropdown select",
+      "properties": {
+        "id": {"type": "string"},
+        "component": {"const": "SelectDropdown"},
+        "label": {"type": "string"},
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {"type": "string"},
+              "value": {"type": "string"}
+            },
+            "required": ["label", "value"]
+          }
+        },
+        "selected": {"type": "string"},
+        "searchable": {"type": "boolean"},
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "disabled": {"type": "boolean"}
+          }
+        }
+      },
+      "required": ["id", "component", "options"]
+    },
+    "List": {
+      "description": "Scrollable selectable list",
+      "properties": {
+        "id": {"type": "string"},
+        "component": {"const": "List"},
+        "label": {"type": "string"},
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "string"},
+              "label": {"type": "string"},
+              "description": {"type": "string"},
+              "avatar": {"type": "string"}
+            },
+            "required": ["id", "label"]
+          }
+        },
+        "selected": {"type": "string"},
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "disabled": {"type": "boolean"}
+          }
+        }
+      },
+      "required": ["id", "component", "items"]
+    },
+    "Image": {
+      "description": "Image from URL or base64",
+      "properties": {
+        "id": {"type": "string"},
+        "component": {"const": "Image"},
+        "source": {
+          "type": "object",
+          "properties": {
+            "type": {"enum": ["url", "base64"]},
+            "url": {"type": "string"},
+            "data": {"type": "string"}
+          },
+          "required": ["type"]
+        },
+        "size": {"enum": ["small", "medium", "large"]},
+        "alt": {"type": "string"},
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "disabled": {"type": "boolean"}
+          }
+        }
+      },
+      "required": ["id", "component", "source"]
+    },
     "Card": {
       "description": "Container for grouped content",
       "properties": {
@@ -77,8 +193,7 @@
         "component": {"const": "Card"},
         "children": {
           "type": "array",
-          "items": {"type": "string"},
-          "description": "IDs of child components"
+          "items": {"type": "string"}
         },
         "attributes": {
           "type": "object",
@@ -138,7 +253,7 @@
           "type": "object",
           "properties": {
             "surfaceId": {"type": "string"},
-            "catalogId": {"type": "string", "default": "https://a2ui.org/specification/v0_9/standard_catalog.json"}
+            "catalogId": {"type": "string"}
           },
           "required": ["surfaceId"]
         }
@@ -159,7 +274,7 @@
                 "type": "object",
                 "properties": {
                   "id": {"type": "string"},
-                  "component": {"type": "string", "enum": ["Text", "Button", "TextField", "Card", "Column", "Row"]}
+                  "component": {"type": "string", "enum": ["Text", "Button", "TextField", "Checkbox", "RadioGroup", "SelectDropdown", "List", "Image", "Card", "Column", "Row"]}
                 },
                 "required": ["id", "component"]
               }
@@ -178,7 +293,7 @@
           "type": "object",
           "properties": {
             "surfaceId": {"type": "string"},
-            "path": {"type": "string", "description": "JSON path like /form/name"},
+            "path": {"type": "string"},
             "value": {}
           },
           "required": ["surfaceId", "path", "value"]

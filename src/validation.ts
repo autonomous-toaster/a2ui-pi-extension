@@ -89,7 +89,7 @@ export function validateComponent(component: any): A2UIValidationResult {
 
   if (!component.component) {
     errors.push("Component missing required field: component");
-  } else if (!["Text", "Button", "TextField", "Card", "Column", "Row"].includes(component.component)) {
+  } else if (!["Text", "Button", "TextField", "Checkbox", "RadioGroup", "SelectDropdown", "List", "Image", "Card", "Column", "Row"].includes(component.component)) {
     errors.push(`Invalid component type: ${component.component}`);
   }
 
@@ -110,6 +110,31 @@ export function validateComponent(component: any): A2UIValidationResult {
         if (!validateDataPath(component.value.path)) {
           errors.push(`Invalid data path: ${component.value.path}`);
         }
+      }
+      break;
+    case "Checkbox":
+      if (!component.label) {
+        errors.push("Checkbox component missing required field: label");
+      }
+      break;
+    case "RadioGroup":
+      if (!component.options || !Array.isArray(component.options)) {
+        errors.push("RadioGroup component missing required field: options (must be array)");
+      }
+      break;
+    case "SelectDropdown":
+      if (!component.options || !Array.isArray(component.options)) {
+        errors.push("SelectDropdown component missing required field: options (must be array)");
+      }
+      break;
+    case "List":
+      if (!component.items || !Array.isArray(component.items)) {
+        errors.push("List component missing required field: items (must be array)");
+      }
+      break;
+    case "Image":
+      if (!component.source || !component.source.type) {
+        errors.push("Image component missing required field: source.type");
       }
       break;
     case "Card":
