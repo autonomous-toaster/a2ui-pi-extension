@@ -26,6 +26,7 @@ import { parseA2UIResponse, extractSurfaceId, extractComponents, extractDataMode
 import { validateA2UIMessages, validateComponentReferences } from "../src/validation";
 import { a2uiToTUI, renderA2UISurface, type ComponentRenderContext } from "../src/adapter";
 import { listExamples, getExample, getExampleInfo } from "../src/examples";
+import { InteractiveA2UIForm, type FormData } from "../src/interactive-form";
 
 // ===== Extension State =====
 
@@ -80,49 +81,131 @@ export default function (pi: ExtensionAPI) {
     }),
 
     async execute(toolCallId, params, signal, onUpdate, ctx) {
+      if (!ctx.hasUI) {
+        return {
+          content: [{ type: "text", text: "Error: UI not available. This tool requires interactive mode." }],
+          details: { error: "No UI" },
+        };
+      }
+
       try {
-        // Step 1: Notify start
+        // Step 1: Generate A2UI from LLM
         onUpdate?.({
-          content: [{ type: "text", text: "Generating A2UI interface..." }],
+          content: [{ type: "text", text: "Generating form..." }],
           details: { phase: "generating" },
         });
 
-        // Step 2: Call LLM with injected schema
         const llmPrompt = `Generate an A2UI interface for: ${params.description}`;
         const llmResponse = await callLLMWithA2UISchema(llmPrompt, pi);
 
-        // Step 3: Parse response
+        // Step 2: Parse response
         let { text, a2uiMessages, parseError } = parseA2UIResponse(llmResponse);
 
         if (parseError && a2uiAutoRetry && a2uiMaxRetries > 0) {
-          onUpdate?.({
-            content: [{ type: "text", text: `Parse error: ${parseError}. Retrying...` }],
-            details: { phase: "retry", error: parseError },
-          });
-
-          // Retry with error feedback
           let attempts = 0;
           while (attempts < a2uiMaxRetries && (parseError || a2uiMessages.length === 0)) {
             const errorMsg = generateErrorFeedback([parseError || "No valid JSON found"], llmResponse);
             const retryResponse = await callLLMWithErrorFeedback(errorMsg, pi);
             const retryParsed = parseA2UIResponse(retryResponse);
-
             text = retryParsed.text;
             a2uiMessages = retryParsed.a2uiMessages;
             parseError = retryParsed.parseError;
-            llmResponse = retryResponse;
-
             attempts++;
           }
         }
 
         if (!a2uiMessages.length) {
           return {
-            content: [
-              {
-                type: "text",
-                text: `Failed to generate A2UI. ${parseError ? `Parse error: ${parseError}` : "No valid JSON found."}`,
-              },
+            content: [{ type: "text", text: `Failed to generate form. ${parseError ? `Error: ${parseError}` : "No valid JSON."}` }],
+            details: { error: parseError || "No A2UI generated" },
+          };
+        }
+
+        // Step 3: Validate
+        const validation = validateA2UIMessages(a2uiMessages);
+        if (!validation.valid) {
+          return {
+            content: [{ type: "text", text: `Validation failed:\n${validation.errors.join("\n")}` }],
+            details: { error: "Validation failed", errors: validation.errors },
+          };
+        }
+
+        // Step 4: Extract components
+        const surfaceId = extractSurfaceId(a2uiMessages);
+        const components = extractComponents(a2uiMessages);
+
+        if (!surfaceId || components.size === 0) {
+          return {
+            content: [{ type: "text", text: "No components found in A2UI" }],
+            details: { error: "No components" },
+          };
+        }
+
+        // Step 5: Show interactive form via ctx.ui.custom()
+        onUpdate?.({
+          content: [{ type: "text", text: "Showing form..." }],
+          details: { phase: "rendering" },
+        });
+
+        const formData = await ctx.ui.custom<FormData | null>((tui, theme, _kb, done) => {
+          const form = new InteractiveA2UIForm(components, theme);
+
+          form.onSubmit = (data) => {
+            done(data);
+          };
+
+          form.onCancel = () => {
+            done(null);
+          };
+
+          return {
+            render: (width) => form.render(width),
+            invalidate: () => form.invalidate(),
+            handleInput: (data) => {
+              form.handleInput(data);
+              tui.requestRender();
+            },
+          };
+        });
+
+        // Step 6: Return collected form data
+        if (!formData) {
+          return {
+            content: [{ type: "text", text: "Form cancelled" }],
+            details: { cancelled: true },
+          };
+        }
+
+        // Convert to readable submission
+        const submission: Record<string, string> = {};
+        for (const [fieldId, value] of Object.entries(formData)) {
+          const field = components.get(fieldId);
+          const label = (field as any)?.label || fieldId;
+          submission[label] = value;
+        }
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Form submitted:\n${JSON.stringify(submission, null, 2)}`,
+            },
+          ],
+          details: {
+            formSubmitted: true,
+            data: submission,
+            rawData: formData,
+          },
+        };
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        return {
+          content: [{ type: "text", text: `Error: ${errorMsg}` }],
+          details: { error: errorMsg },
+        };
+      }
+    },
+
             ],
             details: { error: parseError || "No valid A2UI JSON generated" },
           };
