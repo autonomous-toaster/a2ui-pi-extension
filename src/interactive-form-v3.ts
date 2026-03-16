@@ -443,6 +443,18 @@ export function createA2UIFormComponent(
         add(buttonTexts.join("   "));
       }
 
+      // Render any non-interactive Text components that aren't part of fieldIds
+      add("");
+      for (const [id, comp] of components) {
+        if (comp.component === "Text" && !fieldIds.includes(id) && !buttonIds.includes(id)) {
+          const text = (comp as TextComponent).text || "";
+          // Add text with slight indent
+          for (const line of text.split("\n")) {
+            add(theme.fg("text", "  " + line));
+          }
+        }
+      }
+
       // Bottom border
       add(theme.fg("accent", "└" + "─".repeat(Math.max(0, width - 2)) + "┘"));
 

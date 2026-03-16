@@ -9,42 +9,73 @@ import * as path from "node:path";
 // ===== Default System Prompt Injection =====
 
 const A2UI_SCHEMA_PROMPT = `
-# A2UI JSON Generation
+# A2UI JSON Generation Guide
 
-Generate A2UI JSON when user requests interactive UIs. Use delimiter \`---a2ui_JSON---\` to wrap the JSON block.
+Generate A2UI JSON forms when user requests interactive UIs. Use delimiter \`---a2ui_JSON---\` to wrap JSON blocks.
 
-## Components (v0.9): Text, Button, TextField, Card, Column, Row
+## All Available Components (v0.9)
 
-## Format
+**Layout**: Card, Column, Row
+**Display**: Text, Button, Image  
+**Input**: TextField, TextArea, Checkbox, RadioGroup, SelectDropdown, Toggle, NumberInput, DatePicker, Rating, Combobox, Slider, Tabs, Accordion, List
+
+## When to Use Each Input Component
+
+- **TextField**: Single-line text input (names, emails, short answers)
+- **TextArea**: Multi-line text (long responses, descriptions)
+- **Checkbox**: Single yes/no option or multiple selections
+- **RadioGroup**: Choose ONE from several options
+- **SelectDropdown**: Choose from predefined list (dropdown)
+- **Combobox**: Search/filter through options + select
+- **Toggle**: On/off switch
+- **NumberInput**: Integer or decimal numbers
+- **Slider**: Choose number in range
+- **Rating**: 1-5 star rating
+- **DatePicker**: Date selection (YYYY-MM-DD format)
+- **Tabs**: Group content by tabs
+- **Accordion**: Collapsible sections
+- **List**: Display items with selection
+
+## Form Structure Example
+
 \`\`\`json
 ---a2ui_JSON---
 [
-  {"version": "v0.9", "createSurface": {"surfaceId": "main"}},
-  {"version": "v0.9", "updateComponents": {"surfaceId": "main", "components": [
-    {"id": "root", "component": "Column", "children": ["title", "btn"]},
-    {"id": "title", "component": "Text", "text": "Title"},
-    {"id": "btn", "component": "Button", "child": "btn_text", "action": {"name": "submit"}},
-    {"id": "btn_text", "component": "Text", "text": "Click"}
+  {"version": "v0.9", "createSurface": {"surfaceId": "form_id"}},
+  {"version": "v0.9", "updateComponents": {"surfaceId": "form_id", "components": [
+    {"id": "root", "component": "Column", "children": ["title", "q1", "q2", "submit"]},
+    {"id": "title", "component": "Text", "text": "Form Title"},
+    {"id": "q1", "component": "TextField", "label": "Question 1", "placeholder": "Your answer"},
+    {"id": "q2", "component": "RadioGroup", "label": "Question 2", "options": [{"label": "Option A", "value": "a"}, {"label": "Option B", "value": "b"}]},
+    {"id": "submit", "component": "Button", "child": "submit_text"},
+    {"id": "submit_text", "component": "Text", "text": "Submit"}
   ]}}
 ]
 \`\`\`
 
 ## Rules
-1. First message: createSurface with surfaceId
-2. Children reference component IDs (strings), not objects
-3. Unique IDs within surface
-4. Data paths: {"path": "/key/field"}
-5. All messages have "version": "v0.9"
-6. Array format: wrap in [ ]
-7. No inline objects, no code execution
 
-## Component Examples
-- Text: {"id": "t1", "component": "Text", "text": "Hello"}
-- Button: {"id": "b1", "component": "Button", "child": "label", "action": {"name": "click"}}
-- TextField: {"id": "f1", "component": "TextField", "label": "Name", "value": {"path": "/form/name"}}
-- Card: {"id": "c1", "component": "Card", "children": ["title", "body"]}
-- Column: {"id": "col", "component": "Column", "children": ["item1", "item2"]}
-- Row: {"id": "row", "component": "Row", "children": ["left", "right"]}
+1. Always include a submit Button at the end
+2. First message: createSurface with unique surfaceId
+3. Children reference component IDs (strings), not objects
+4. All component IDs must be unique within surface
+5. All messages have "version": "v0.9"
+6. Wrap in [ ] array format
+7. Use Column/Row/Card for layout, not just bare children
+
+## Required Fields by Component
+
+- **Text**: id, component, text
+- **Button**: id, component, child (points to Text component for label)
+- **TextField**: id, component, label, placeholder (optional)
+- **TextArea**: id, component, label, placeholder (optional)
+- **Checkbox**: id, component, label
+- **RadioGroup**: id, component, label, options (array of {label, value})
+- **SelectDropdown**: id, component, label, options (array of {label, value})
+- **Combobox**: id, component, label, options (array of {label, value})
+- **Column**: id, component, children (array of IDs)
+- **Row**: id, component, children (array of IDs)
+- **Card**: id, component, children (array of IDs)
 `;
 
 // ===== Injection Functions =====
