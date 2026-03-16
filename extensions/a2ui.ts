@@ -458,10 +458,10 @@ export default function (pi: ExtensionAPI) {
             details: {},
           };
         } else {
-          console.error("[A2UI Tool] Form cancelled by user - press Ctrl+F to reopen");
+          console.error("[A2UI Tool] Form cancelled by user - press Ctrl+U to reopen");
           // When form is cancelled, return empty content
-          // User can press Ctrl+F to reopen the form without re-triggering LLM
-          ctx.ui.notify("Form cancelled. Press Ctrl+F to reopen.", "info");
+          // User can press Ctrl+U to reopen the form without re-triggering LLM
+          ctx.ui.notify("Form cancelled. Press Ctrl+U to reopen.", "info");
           return {
             content: [{ type: "text", text: "" }],
             details: {},
@@ -480,7 +480,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   // Register keyboard shortcut to reopen last form
-  pi.registerShortcut("ctrl+f", {
+  pi.registerShortcut("ctrl+u", {
     label: "Reopen A2UI Form",
     description: "Reopen the last form if it was cancelled",
     handler: async (ctx) => {
