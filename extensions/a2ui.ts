@@ -165,10 +165,10 @@ const demoExamples: Record<string, { name: string; example: string }> = {
     "components": [
       {"id": "title_label", "component": "Text", "text": "Documentation - Use arrow keys to switch tabs"},
       {"id": "docs_tabs", "component": "Tabs", "defaultTab": "overview", "tabs": [
-        {"id": "overview", "label": "Overview", "content": "Welcome to the documentation.\nThis is a quick start guide to get you up and running.\nNavigate between tabs using arrow keys."},
-        {"id": "install", "label": "Installation", "content": "1. Install via npm: npm install package\n2. Import in your project\n3. Configure settings\n4. Start using in your code"},
-        {"id": "api", "label": "API Docs", "content": "Main methods:\n- connect(options)\n- disconnect()\n- on(event, callback)\n- emit(event, data)"},
-        {"id": "examples", "label": "Examples", "content": "// Basic usage\nconst app = new App();\napp.on('ready', () => {\n  console.log('App ready!');\n});"}
+        {"id": "overview", "label": "Overview", "content": "Welcome to the documentation. This is a quick start guide."},
+        {"id": "install", "label": "Installation", "content": "Install via: npm install package"},
+        {"id": "api", "label": "API Docs", "content": "Methods: connect(), disconnect(), on(), emit()"},
+        {"id": "examples", "label": "Examples", "content": "const app = new App(); app.start();"}
       ]},
       {"id": "submit_btn", "component": "Button", "child": "submit_label"},
       {"id": "submit_label", "component": "Text", "text": "Done"},
