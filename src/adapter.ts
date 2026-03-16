@@ -160,7 +160,7 @@ function renderCard(
 
   const box = new Box(
     elevation,
-    context.theme.fg("primary", title ? `┌ ${title} ┐` : "┌─┐"),
+    context.theme.fg("warning", title ? `┌ ${title} ┐` : "┌─┐"),
   );
 
   // Add children
