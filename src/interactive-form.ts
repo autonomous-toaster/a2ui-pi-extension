@@ -48,6 +48,7 @@ export class InteractiveA2UIForm {
     console.log("[InteractiveA2UIForm] render called, width:", width, "fieldIds:", this.fieldIds.length, "buttonIds:", this.buttonIds.length);
     
     if (this.cachedRender && this.cachedWidth === width) {
+      console.log("[InteractiveA2UIForm] returning cached render");
       return this.cachedRender;
     }
 
@@ -116,14 +117,19 @@ export class InteractiveA2UIForm {
     // Bottom border
     add(this.theme.fg("accent", "└" + "─".repeat(Math.max(0, width - 2)) + "┘"));
 
+    console.log("[InteractiveA2UIForm] rendered", lines.length, "lines");
+    
     this.cachedRender = lines;
     this.cachedWidth = width;
     return lines;
   }
 
   handleInput(data: string): void {
+    console.log("[InteractiveA2UIForm] handleInput called with:", JSON.stringify(data));
+    
     // Navigation: Tab or Down arrow
     if (matchesKey(data, Key.tab) || matchesKey(data, Key.down)) {
+      console.log("[InteractiveA2UIForm] Tab/Down pressed");
       if (this.focusedButtonIndex === -1) {
         // In fields - move to next field or buttons
         if (this.fieldIds.length > 1) {
@@ -187,18 +193,21 @@ export class InteractiveA2UIForm {
 
     // Enter - submit or click button
     if (matchesKey(data, Key.enter)) {
+      console.log("[InteractiveA2UIForm] Enter pressed, focusedButtonIndex:", this.focusedButtonIndex);
       if (this.focusedButtonIndex >= 0) {
         const buttonId = this.buttonIds[this.focusedButtonIndex];
         if (buttonId) {
           const btn = this.components.get(buttonId) as ButtonComponent;
           // First button is Submit, second is Cancel
           if (this.focusedButtonIndex === 0) {
+            console.log("[InteractiveA2UIForm] Submitting form");
             const formData: FormData = {};
             for (const [fieldId, value] of this.fieldValues) {
               formData[fieldId] = value;
             }
             this.onSubmit?.(formData);
           } else if (this.focusedButtonIndex === 1) {
+            console.log("[InteractiveA2UIForm] Cancelling form");
             this.onCancel?.();
           }
         }
@@ -216,6 +225,7 @@ export class InteractiveA2UIForm {
 
     // Escape - cancel
     if (matchesKey(data, Key.escape)) {
+      console.log("[InteractiveA2UIForm] Escape pressed, cancelling");
       this.onCancel?.();
       return;
     }

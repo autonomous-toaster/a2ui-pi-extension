@@ -152,29 +152,33 @@ export default function (pi: ExtensionAPI) {
 
         console.log("[A2UI] About to show form via ctx.ui.custom()");
 
-        const formData = await ctx.ui.custom<FormData | null>((tui, theme, _kb, done) => {
-          console.log("[A2UI] In ctx.ui.custom callback, creating form");
-          const form = new InteractiveA2UIForm(components, theme);
+        const formData = await ctx.ui.custom<FormData | null>(
+          (tui, theme, _kb, done) => {
+            console.log("[A2UI] In ctx.ui.custom callback, creating form");
+            const form = new InteractiveA2UIForm(components, theme);
 
-          form.onSubmit = (data) => {
-            console.log("[A2UI] Form submitted with data", data);
-            done(data);
-          };
+            form.onSubmit = (data) => {
+              console.log("[A2UI] Form submitted with data", data);
+              done(data);
+            };
 
-          form.onCancel = () => {
-            console.log("[A2UI] Form cancelled");
-            done(null);
-          };
+            form.onCancel = () => {
+              console.log("[A2UI] Form cancelled");
+              done(null);
+            };
 
-          return {
-            render: (width) => form.render(width),
-            invalidate: () => form.invalidate(),
-            handleInput: (data) => {
-              form.handleInput(data);
-              tui.requestRender();
-            },
-          };
-        });
+            return {
+              render: (width) => form.render(width),
+              invalidate: () => form.invalidate(),
+              handleInput: (data) => {
+                console.log("[A2UI Tool wrapper] handleInput called with:", JSON.stringify(data));
+                form.handleInput(data);
+                tui.requestRender();
+              },
+            };
+          },
+          { overlay: true }
+        );
 
         console.log("[A2UI] Form closed, formData:", formData);
 
