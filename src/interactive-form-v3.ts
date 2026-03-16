@@ -8,7 +8,7 @@
  * - Graceful fallback for image errors
  */
 
-import { matchesKey, Key, truncateToWidth, Image as TuiImage } from "@mariozechner/pi-tui";
+import { matchesKey, Key, truncateToWidth } from "@mariozechner/pi-tui";
 import type { 
   TextFieldComponent, 
   ButtonComponent, 
@@ -21,6 +21,7 @@ import type {
   A2UIComponent 
 } from "./types";
 import { convertImageUrlToBase64, clearImageCache } from "./image-fetcher";
+import { kittyImageLine } from "./kitty-graphics";
 
 export interface FormData {
   [fieldId: string]: string;
@@ -55,7 +56,7 @@ export function createA2UIFormComponent(
     const fieldValues = new Map<string, string>();
     const fieldStates = new Map<string, any>();
     const imageStates = new Map<string, ImageState>(); // NEW: Track image loading state
-    const renderedImages = new Map<string, TuiImage>(); // NEW: Cache rendered TuiImage objects
+    // Removed: use Kitty escape sequences instead
     let cachedLines: string[] | undefined;
     let cachedWidth: number | undefined;
 
@@ -97,34 +98,16 @@ export function createA2UIFormComponent(
         const result = await convertImageUrlToBase64(url);
         if (result.base64) {
           imageStates.set(fieldId, { base64: result.base64, loading: false });
-          // Create TuiImage component
-          try {
-            // Create proper ImageTheme for pi-tui Image component
-            const imageTheme = {
-              fallbackColor: (str: string) => theme.fg("muted", str)
-            };
-            const tuiImage = new TuiImage(
-              result.base64,
-              getMimeTypeFromUrl(url),
-              imageTheme,
-              { maxWidthCells: 40, maxHeightCells: 20 }
-            );
-            renderedImages.set(fieldId, tuiImage);
-          } catch (renderErr) {
-            // Fall back to text if TuiImage creation fails
-            imageStates.set(fieldId, { 
-              error: `Failed to render: ${renderErr instanceof Error ? renderErr.message : 'unknown error'}`,
-              loading: false 
-            });
-          }
+          refresh();
         } else {
           imageStates.set(fieldId, { error: result.error, loading: false });
+          refresh();
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         imageStates.set(fieldId, { error: msg, loading: false });
+        refresh();
       }
-      refresh();
     }
 
     function getMimeTypeFromUrl(url: string): string {
@@ -230,25 +213,16 @@ export function createA2UIFormComponent(
           const prefix = isFocused ? theme.fg("success", "> ") : "  ";
 
           if (imgState.loading) {
-            // Show loading state
-            add(prefix + theme.fg("text", `[IMAGE LOADING...] ${label}`));
+            add(prefix + theme.fg("text", `[Loading image...] ${label}`));
             add("");
           } else if (imgState.error) {
-            // Show error fallback
-            add(prefix + theme.fg("warning", `[IMAGE ERROR] ${label}`));
+            add(prefix + theme.fg("warning", `[Image error] ${label}`));
             add(theme.fg("dim", `  ${imgState.error}`));
             add("");
-          } else if (imgState.base64 && renderedImages.has(fieldId)) {
-            // Render using TuiImage
-            const tuiImg = renderedImages.get(fieldId)!;
-            const imgLines = tuiImg.render(width - 2);
-            for (const line of imgLines) {
-              add("  " + line);
-            }
-            add("");
           } else if (imgState.base64) {
-            // Have base64 but TuiImage hasn't been created yet
-            add(prefix + theme.fg("muted", `[IMAGE] ${label}`));
+            // Use Kitty graphics protocol escape sequence
+            add(prefix + theme.fg("success", `[Image: ${label}]`));
+            add(kittyImageLine(imgState.base64, 40, 20));
             add("");
           }
         }
