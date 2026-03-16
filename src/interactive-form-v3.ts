@@ -267,7 +267,7 @@ export function createA2UIFormComponent(
           const isFocused = focusedButtonIndex === i;
           const prefix = isFocused ? theme.fg("success", "[ ") : "[ ";
           const suffix = isFocused ? theme.fg("success", " ]") : " ]";
-          const color = isFocused ? "success" : "info";
+          const color = isFocused ? "success" : "text";
           buttonTexts.push(prefix + theme.fg(color, label) + suffix);
         }
         add(buttonTexts.join("   "));
