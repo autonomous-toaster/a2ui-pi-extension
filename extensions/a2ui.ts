@@ -484,12 +484,14 @@ export default function (pi: ExtensionAPI) {
     label: "Reopen A2UI Form",
     description: "Reopen the last form if it was cancelled",
     handler: async (ctx) => {
+      console.error("[A2UI Shortcut] Ctrl+Shift+R pressed, lastFormComponents:", lastFormComponents ? lastFormComponents.size : "null");
+      
       if (!lastFormComponents || lastFormComponents.size === 0) {
         ctx.ui.notify("No form to reopen", "info");
         return;
       }
 
-      console.error("[A2UI Shortcut] Reopening last form");
+      console.error("[A2UI Shortcut] Reopening last form with", lastFormComponents.size, "components");
       
       // Display the form again
       const componentFn = createA2UIFormComponent(lastFormComponents, ctx.ui.theme);
@@ -506,8 +508,9 @@ export default function (pi: ExtensionAPI) {
         // Clear stored form after successful submission
         lastFormComponents = null;
       } else {
-        console.error("[A2UI Shortcut] Form cancelled again");
-        ctx.ui.notify("Form cancelled", "info");
+        console.error("[A2UI Shortcut] Form cancelled again - keeping form in cache");
+        // Don't clear lastFormComponents - keep it for another reopen attempt
+        ctx.ui.notify("Form cancelled. Press Ctrl+Shift+R to reopen again.", "info");
       }
     },
   });
