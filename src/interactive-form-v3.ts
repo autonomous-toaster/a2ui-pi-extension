@@ -248,11 +248,18 @@ export function createA2UIFormComponent(
           
           add(prefix + theme.fg("text", "Sections:"));
           
-          for (const section of accordion.sections) {
+          for (let i = 0; i < accordion.sections.length; i++) {
+            const section = accordion.sections[i];
             const isExpanded = state.expanded[section.id] || false;
             const symbol = isExpanded ? "▼" : "▶";
+            const isSelected = i === state.selectedIndex;
             const sectionLine = `  ${symbol} ${section.title}`;
-            add(sectionLine);
+            
+            if (isSelected && isFocused) {
+              add(theme.fg("accent", sectionLine));
+            } else {
+              add(sectionLine);
+            }
             
             if (isExpanded) {
               const contentLines = section.content.split("\n");
@@ -587,13 +594,23 @@ export function createA2UIFormComponent(
 
         if (comp.component === "Accordion") {
           const accordion = comp as AccordionComponent;
-          const state = fieldStates.get(currentField) || { expanded: {}, selectedIndex: 0 };
+          let state = fieldStates.get(currentField);
+          if (!state) {
+            // Initialize if missing
+            const expanded: Record<string, boolean> = {};
+            for (const section of accordion.sections) {
+              expanded[section.id] = section.expanded || false;
+            }
+            state = { expanded, selectedIndex: 0 };
+            fieldStates.set(currentField, state);
+          }
           
           // Space: Toggle current section
           if (matchesKey(key, Key.space)) {
             const currentSection = accordion.sections[state.selectedIndex];
             if (currentSection) {
               state.expanded[currentSection.id] = !state.expanded[currentSection.id];
+              fieldStates.set(currentField, state); // Ensure state is saved
             }
             refresh();
             return;
@@ -602,6 +619,7 @@ export function createA2UIFormComponent(
           // Down arrow: Move to next section
           if (matchesKey(key, Key.down)) {
             state.selectedIndex = Math.min(state.selectedIndex + 1, accordion.sections.length - 1);
+            fieldStates.set(currentField, state);
             refresh();
             return;
           }
@@ -609,6 +627,7 @@ export function createA2UIFormComponent(
           // Up arrow: Move to previous section
           if (matchesKey(key, Key.up)) {
             state.selectedIndex = Math.max(state.selectedIndex - 1, 0);
+            fieldStates.set(currentField, state);
             refresh();
             return;
           }
