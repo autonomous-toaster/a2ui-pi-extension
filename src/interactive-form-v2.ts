@@ -136,8 +136,9 @@ export function createA2UIFormComponent(
             const opt = options[j];
             const isSelected = state.selected === opt.value;
             const symbol = isSelected ? "◉" : "○";
-            const prefix = isFocused && j === 0 ? theme.fg("success", "> ") : "  ";
-            add(prefix + theme.fg(isSelected ? "success" : "text", `${symbol} ${opt.label}`));
+            const optionColor = isSelected ? "success" : "text";
+            const prefix = isSelected && isFocused ? theme.fg("success", "> ") : "  ";
+            add(prefix + theme.fg(optionColor, `${symbol} ${opt.label}`));
           }
           add("");
         } else if (comp.component === "SelectDropdown") {
@@ -175,15 +176,20 @@ export function createA2UIFormComponent(
           add(theme.fg(labelColor, `  ${label}:`));
 
           const items = list.items || [];
-          for (let j = 0; j < Math.min(5, items.length); j++) {
+          // Show items from scrollIndex
+          const startIdx = state.scrollIndex || 0;
+          const endIdx = Math.min(startIdx + 5, items.length);
+          
+          for (let j = startIdx; j < endIdx; j++) {
             const item = items[j];
             const isSelected = state.selected === item.id;
             const symbol = isSelected ? "▶" : " ";
-            const prefix = isFocused && j === 0 ? theme.fg("success", "> ") : "  ";
-            add(prefix + theme.fg(isSelected ? "success" : "text", `${symbol} ${item.label}`));
+            const itemColor = isSelected ? "success" : "text";
+            const prefix = isSelected && isFocused ? theme.fg("success", "> ") : "  ";
+            add(prefix + theme.fg(itemColor, `${symbol} ${item.label}`));
           }
           if (items.length > 5) {
-            add(theme.fg("dim", `  ↓ ${items.length - 5} more`));
+            add(theme.fg("dim", `  ↓ ${items.length - endIdx} more`));
           }
           add("");
         } else if (comp.component === "Image") {
@@ -282,7 +288,45 @@ export function createA2UIFormComponent(
       
       // Tab or Down arrow - move focus forward
       if (matchesKey(data, Key.tab) || matchesKey(data, Key.down)) {
-        if (focusedButtonIndex === -1) {
+        if (focusedButtonIndex === -1 && focusedFieldId) {
+          // Special handling for List and RadioGroup - navigate items within component
+          if (focusedComp?.component === "List") {
+            const list = focusedComp as ListComponent;
+            const items = list.items || [];
+            const state = fieldStates.get(focusedFieldId) || { selected: "", scrollIndex: 0 };
+            
+            // Find current selected index
+            let currentIdx = items.findIndex(item => item.id === state.selected);
+            if (currentIdx === -1) currentIdx = 0;
+            
+            // Move to next item
+            if (currentIdx < items.length - 1) {
+              const nextIdx = currentIdx + 1;
+              state.selected = items[nextIdx].id;
+              if (nextIdx >= state.scrollIndex + 5) {
+                state.scrollIndex = nextIdx - 4;
+              }
+              refresh();
+              return;
+            }
+          } else if (focusedComp?.component === "RadioGroup") {
+            const radio = focusedComp as RadioGroupComponent;
+            const options = radio.options || [];
+            const state = fieldStates.get(focusedFieldId) || { selected: "", expanded: false, scrollIndex: 0 };
+            
+            // Find current selected index
+            let currentIdx = options.findIndex(opt => opt.value === state.selected);
+            if (currentIdx === -1) currentIdx = 0;
+            
+            // Move to next option
+            if (currentIdx < options.length - 1) {
+              state.selected = options[currentIdx + 1].value;
+              refresh();
+              return;
+            }
+          }
+          
+          // Default field navigation for other types
           if (focusedFieldIndex === fieldIds.length - 1) {
             if (buttonIds.length > 0) {
               focusedButtonIndex = 0;
@@ -302,7 +346,45 @@ export function createA2UIFormComponent(
 
       // Shift+Tab or Up arrow - move focus backward
       if (matchesKey(data, Key.shift("tab")) || matchesKey(data, Key.up)) {
-        if (focusedButtonIndex === -1) {
+        if (focusedButtonIndex === -1 && focusedFieldId) {
+          // Special handling for List and RadioGroup - navigate items within component
+          if (focusedComp?.component === "List") {
+            const list = focusedComp as ListComponent;
+            const items = list.items || [];
+            const state = fieldStates.get(focusedFieldId) || { selected: "", scrollIndex: 0 };
+            
+            // Find current selected index
+            let currentIdx = items.findIndex(item => item.id === state.selected);
+            if (currentIdx === -1) currentIdx = items.length > 0 ? items.length - 1 : 0;
+            
+            // Move to previous item
+            if (currentIdx > 0) {
+              const prevIdx = currentIdx - 1;
+              state.selected = items[prevIdx].id;
+              if (prevIdx < state.scrollIndex) {
+                state.scrollIndex = prevIdx;
+              }
+              refresh();
+              return;
+            }
+          } else if (focusedComp?.component === "RadioGroup") {
+            const radio = focusedComp as RadioGroupComponent;
+            const options = radio.options || [];
+            const state = fieldStates.get(focusedFieldId) || { selected: "", expanded: false, scrollIndex: 0 };
+            
+            // Find current selected index
+            let currentIdx = options.findIndex(opt => opt.value === state.selected);
+            if (currentIdx === -1) currentIdx = options.length > 0 ? options.length - 1 : 0;
+            
+            // Move to previous option
+            if (currentIdx > 0) {
+              state.selected = options[currentIdx - 1].value;
+              refresh();
+              return;
+            }
+          }
+          
+          // Default field navigation for other types
           if (focusedFieldIndex === 0 && buttonIds.length > 0) {
             focusedButtonIndex = buttonIds.length - 1;
             refresh();
