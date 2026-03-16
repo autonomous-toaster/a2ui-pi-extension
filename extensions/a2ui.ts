@@ -337,6 +337,31 @@ const demoExamples: Record<string, { name: string; example: string }> = {
 ---a2ui_JSON---
 `,
   },
+  card: {
+    name: "Card Layout Demo",
+    example: `
+---a2ui_JSON---
+[
+  {"version": "v0.9", "createSurface": {"surfaceId": "card_form"}},
+  {"version": "v0.9", "updateComponents": {
+    "surfaceId": "card_form",
+    "components": [
+      {"id": "main_card", "component": "Card", "children": ["header_label", "form_section", "buttons_section"]},
+      {"id": "header_label", "component": "Text", "text": "User Registration"},
+      {"id": "form_section", "component": "Column", "children": ["name_field", "email_field"]},
+      {"id": "name_field", "component": "TextField", "label": "Full Name", "placeholder": "John Doe"},
+      {"id": "email_field", "component": "TextField", "label": "Email", "placeholder": "john@example.com"},
+      {"id": "buttons_section", "component": "Row", "children": ["submit_btn", "cancel_btn"]},
+      {"id": "submit_btn", "component": "Button", "child": "submit_label"},
+      {"id": "submit_label", "component": "Text", "text": "Register"},
+      {"id": "cancel_btn", "component": "Button", "child": "cancel_label"},
+      {"id": "cancel_label", "component": "Text", "text": "Cancel"}
+    ]
+  }}
+]
+---a2ui_JSON---
+`,
+  },
   showcase: { name: "Product Showcase", example: getProductShowcaseExample() },
   dashboard: { name: "Dashboard", example: getDashboardExample() },
   article: { name: "Article", example: getArticleExample() },
@@ -360,7 +385,7 @@ export default function (pi: ExtensionAPI) {
 
   // === MAIN DEMO COMMAND ===
   pi.registerCommand("a2ui-demo", {
-    description: `/a2ui-demo [form|textarea|slider|tabs|accordion|toggle|numberinput|rating|combobox|datepicker|survey|settings|products|profile|team|showcase|dashboard|article|overlay]`,
+    description: `/a2ui-demo [form|textarea|slider|tabs|accordion|toggle|numberinput|rating|combobox|datepicker|card|survey|settings|products|profile|team|showcase|dashboard|article|overlay]`,
     handler: async (args, ctx) => {
       const demoType = args.trim() || "form";
       console.error(`[A2UI] /a2ui-demo ${demoType} handler called`);
@@ -414,7 +439,7 @@ export default function (pi: ExtensionAPI) {
 
       const demo = demoExamples[demoType];
       if (!demo) {
-        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, textarea, slider, tabs, accordion, toggle, numberinput, rating, combobox, datepicker, survey, settings, products, profile, team, showcase, dashboard, article, overlay`, "error");
+        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, textarea, slider, tabs, accordion, toggle, numberinput, rating, combobox, datepicker, card, survey, settings, products, profile, team, showcase, dashboard, article, overlay`, "error");
         return;
       }
 
