@@ -421,7 +421,9 @@ export function createA2UIFormComponent(
         if (focusedButtonIndex >= 0) {
           const buttonId = buttonIds[focusedButtonIndex];
           const btn = components.get(buttonId) as ButtonComponent;
-          if (btn?.id === "submit_btn" || btn?.child?.includes("submit")) {
+          
+          // Submit or Close button - collect data
+          if (btn?.id === "submit_btn" || btn?.id?.includes("submit") || btn?.id?.includes("close") || btn?.id?.includes("done")) {
             clearImageCache();
             // Collect form data
             const data: FormData = {};
@@ -443,6 +445,13 @@ export function createA2UIFormComponent(
               }
             }
             done(data);
+            return;
+          }
+          
+          // Cancel button - close without data
+          if (btn?.id === "cancel_btn" || btn?.id?.includes("cancel")) {
+            clearImageCache();
+            done(null);
             return;
           }
         } else {
