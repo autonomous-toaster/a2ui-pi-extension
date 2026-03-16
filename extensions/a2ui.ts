@@ -12,6 +12,11 @@ import { createA2UIBeforeAgentStartHandler, injectA2UISchema } from "../src/prom
 import { parseA2UIResponse, extractSurfaceId, extractComponents } from "../src/parser";
 import { validateA2UIMessages } from "../src/validation";
 import { createA2UIFormComponent, type FormData } from "../src/interactive-form-v2";
+import {
+  getPhase2ASurveyExample,
+  getPhase2ASettingsExample,
+  getPhase2AProductListExample,
+} from "../src/examples-phase2";
 
 export default function (pi: ExtensionAPI) {
   // Inject A2UI schema into system prompt
@@ -19,7 +24,7 @@ export default function (pi: ExtensionAPI) {
 
   // Register the /a2ui-form command for manual testing
   pi.registerCommand("a2ui-form", {
-    description: "Test interactive A2UI form",
+    description: "Test interactive A2UI form (Phase 1)",
     handler: async (_args, ctx) => {
       if (!ctx.hasUI) {
         ctx.ui.notify("Error: UI not available", "error");
@@ -72,10 +77,130 @@ export default function (pi: ExtensionAPI) {
       const formData = await ctx.ui.custom(createA2UIFormComponent(components, ctx.ui.theme));
 
       if (formData) {
-        const fields = Object.entries(formData).map(([k, v]) => `${k}: ${v || "(empty)"}`).join(" | ");
+        const fields = Object.entries(formData)
+          .map(([k, v]) => `${k}: ${v || "(empty)"}`)
+          .join(" | ");
         ctx.ui.notify(`Submitted: ${fields}`, "success");
       } else {
         ctx.ui.notify("Form cancelled", "info");
+      }
+    },
+  });
+
+  // Phase 2A: Product Survey Example
+  pi.registerCommand("a2ui-survey", {
+    description: "Phase 2A Example: Product Survey with all components",
+    handler: async (_args, ctx) => {
+      if (!ctx.hasUI) {
+        ctx.ui.notify("Error: UI not available", "error");
+        return;
+      }
+
+      const mockA2UI = getPhase2ASurveyExample();
+
+      const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
+      if (!a2uiMessages.length) {
+        ctx.ui.notify(`Parse error: ${parseError}`, "error");
+        return;
+      }
+
+      const validation = validateA2UIMessages(a2uiMessages);
+      if (!validation.valid) {
+        ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
+        return;
+      }
+
+      const components = extractComponents(a2uiMessages);
+      if (!components.size) {
+        ctx.ui.notify("No components extracted", "error");
+        return;
+      }
+
+      const formData = await ctx.ui.custom(createA2UIFormComponent(components, ctx.ui.theme));
+
+      if (formData) {
+        const fields = Object.entries(formData).map(([k, v]) => `${k}: ${v || "(empty)"}`);
+        ctx.ui.notify(`Survey submitted with ${fields.length} fields`, "success");
+      } else {
+        ctx.ui.notify("Survey cancelled", "info");
+      }
+    },
+  });
+
+  // Phase 2A: Settings Form Example
+  pi.registerCommand("a2ui-settings", {
+    description: "Phase 2A Example: Settings form with checkboxes and select",
+    handler: async (_args, ctx) => {
+      if (!ctx.hasUI) {
+        ctx.ui.notify("Error: UI not available", "error");
+        return;
+      }
+
+      const mockA2UI = getPhase2ASettingsExample();
+
+      const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
+      if (!a2uiMessages.length) {
+        ctx.ui.notify(`Parse error: ${parseError}`, "error");
+        return;
+      }
+
+      const validation = validateA2UIMessages(a2uiMessages);
+      if (!validation.valid) {
+        ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
+        return;
+      }
+
+      const components = extractComponents(a2uiMessages);
+      if (!components.size) {
+        ctx.ui.notify("No components extracted", "error");
+        return;
+      }
+
+      const formData = await ctx.ui.custom(createA2UIFormComponent(components, ctx.ui.theme));
+
+      if (formData) {
+        ctx.ui.notify("Settings saved successfully", "success");
+      } else {
+        ctx.ui.notify("Settings not saved", "info");
+      }
+    },
+  });
+
+  // Phase 2A: Product List Example
+  pi.registerCommand("a2ui-products", {
+    description: "Phase 2A Example: Product selection with list component",
+    handler: async (_args, ctx) => {
+      if (!ctx.hasUI) {
+        ctx.ui.notify("Error: UI not available", "error");
+        return;
+      }
+
+      const mockA2UI = getPhase2AProductListExample();
+
+      const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
+      if (!a2uiMessages.length) {
+        ctx.ui.notify(`Parse error: ${parseError}`, "error");
+        return;
+      }
+
+      const validation = validateA2UIMessages(a2uiMessages);
+      if (!validation.valid) {
+        ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
+        return;
+      }
+
+      const components = extractComponents(a2uiMessages);
+      if (!components.size) {
+        ctx.ui.notify("No components extracted", "error");
+        return;
+      }
+
+      const formData = await ctx.ui.custom(createA2UIFormComponent(components, ctx.ui.theme));
+
+      if (formData) {
+        ctx.ui.notify("Product selected and added to cart", "success");
+      } else {
+        ctx.ui.notify("Product selection cancelled", "info");
       }
     },
   });
