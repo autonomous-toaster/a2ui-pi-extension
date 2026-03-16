@@ -362,14 +362,20 @@ export default function (pi: ExtensionAPI) {
 
   // Hook: Parse and display A2UI from agent responses
   pi.on("after_agent", async (event, ctx) => {
-    if (!event.response || !ctx.hasUI) {
+    // Debug: log event structure
+    console.error("[A2UI] after_agent event keys:", Object.keys(event));
+    
+    if (!event.response && !event.text && !event.output) {
       return;
     }
 
-    const responseText = event.response;
+    const responseText = event.response || event.text || event.output || "";
+    console.error("[A2UI] Response length:", responseText.length);
     
     // Try to parse A2UI from response
     const { a2uiMessages, parseError } = parseA2UIResponse(responseText);
+    console.error("[A2UI] Parsed messages:", a2uiMessages.length, "Error:", parseError);
+    
     if (!a2uiMessages.length) {
       // No A2UI found, that's OK - just continue
       return;
@@ -388,6 +394,8 @@ export default function (pi: ExtensionAPI) {
       // No components, skip
       return;
     }
+
+    console.error("[A2UI] Displaying form with", components.size, "components");
 
     // Display the form
     const componentFn = createA2UIFormComponent(components, ctx.ui.theme);
