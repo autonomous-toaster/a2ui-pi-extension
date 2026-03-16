@@ -103,6 +103,29 @@ const demoExamples: Record<string, { name: string; example: string }> = {
 ---a2ui_JSON---
 `,
   },
+  textarea: {
+    name: "TextArea Demo",
+    example: `
+---a2ui_JSON---
+[
+  {"version": "v0.9", "createSurface": {"surfaceId": "textarea_form"}},
+  {"version": "v0.9", "updateComponents": {
+    "surfaceId": "textarea_form",
+    "components": [
+      {"id": "title_label", "component": "Text", "text": "Feedback Form"},
+      {"id": "name_field", "component": "TextField", "label": "Your Name", "placeholder": "Enter your name"},
+      {"id": "feedback_field", "component": "TextArea", "label": "Feedback", "placeholder": "Enter your feedback (press Enter for new lines)", "rows": 4},
+      {"id": "notes_field", "component": "TextArea", "label": "Additional Notes", "placeholder": "Optional notes", "rows": 3},
+      {"id": "submit_btn", "component": "Button", "child": "submit_label"},
+      {"id": "submit_label", "component": "Text", "text": "Submit Feedback"},
+      {"id": "cancel_btn", "component": "Button", "child": "cancel_label"},
+      {"id": "cancel_label", "component": "Text", "text": "Cancel"}
+    ]
+  }}
+]
+---a2ui_JSON---
+`,
+  },
   survey: { name: "Product Survey", example: getPhase2ASurveyExample() },
   settings: { name: "Settings", example: getPhase2ASettingsExample() },
   products: { name: "Product List", example: getPhase2AProductListExample() },
@@ -131,7 +154,25 @@ export default function (pi: ExtensionAPI) {
 
   // === MAIN DEMO COMMAND ===
   pi.registerCommand("a2ui-demo", {
-    description: "Show A2UI demo: /a2ui-demo [form|survey|settings|products|profile|team|showcase|dashboard|article|overlay]",
+    description: `A2UI Demo Showcase - Display interactive forms with A2UI components
+
+Available demos:
+  /a2ui-demo form         - Basic contact form with text fields
+  /a2ui-demo textarea     - TextArea demo (multi-line input)
+  /a2ui-demo survey       - Product survey with all Phase 2A components
+  /a2ui-demo settings     - Settings form with checkboxes and radio buttons
+  /a2ui-demo products     - Product list with selection
+  /a2ui-demo profile      - Profile card with avatar image
+  /a2ui-demo team         - Team selection with member avatars
+  /a2ui-demo showcase     - Product showcase (e-commerce)
+  /a2ui-demo dashboard    - User dashboard with profile
+  /a2ui-demo article      - Article with featured image
+  /a2ui-demo overlay      - Overlay demo with Ctrl+U toggle
+
+Navigation:
+  Tab / Shift+Tab         - Move between fields
+  Enter / Space           - Select/interact with focused component
+  Escape                  - Close form without submitting`,
     handler: async (args, ctx) => {
       const demoType = args.trim() || "form";
       console.error(`[A2UI] /a2ui-demo ${demoType} handler called`);
@@ -185,7 +226,7 @@ export default function (pi: ExtensionAPI) {
 
       const demo = demoExamples[demoType];
       if (!demo) {
-        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, survey, settings, products, profile, team, showcase, dashboard, article, overlay`, "error");
+        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, textarea, survey, settings, products, profile, team, showcase, dashboard, article, overlay`, "error");
         return;
       }
 

@@ -41,6 +41,19 @@ export interface TextFieldComponent extends A2UIComponent {
   };
 }
 
+export interface TextAreaComponent extends A2UIComponent {
+  component: "TextArea";
+  label?: string;
+  value?: string | { path: string };
+  placeholder?: string;
+  rows?: number;
+  attributes?: {
+    required?: boolean;
+    disabled?: boolean;
+    maxLength?: number;
+  };
+}
+
 export interface CardComponent extends A2UIComponent {
   component: "Card";
   children?: string[]; // IDs of child components

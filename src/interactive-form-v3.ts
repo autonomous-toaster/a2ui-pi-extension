@@ -10,7 +10,8 @@
 
 import { matchesKey, Key, truncateToWidth } from "@mariozechner/pi-tui";
 import type { 
-  TextFieldComponent, 
+  TextFieldComponent,
+  TextAreaComponent, 
   ButtonComponent, 
   TextComponent, 
   CheckboxComponent,
@@ -63,11 +64,11 @@ export function createA2UIFormComponent(
     // Scan for interactive components
     for (const [id, comp] of components) {
       const type = comp.component;
-      if (type === "TextField" || type === "Checkbox" || type === "RadioGroup" || 
+      if (type === "TextField" || type === "TextArea" || type === "Checkbox" || type === "RadioGroup" || 
           type === "SelectDropdown" || type === "List" || type === "Image") {
         fieldIds.push(id);
-        if (type === "TextField") {
-          fieldValues.set(id, (comp as TextFieldComponent).value || "");
+        if (type === "TextField" || type === "TextArea") {
+          fieldValues.set(id, (comp as TextFieldComponent | TextAreaComponent).value || "");
         } else if (type === "Checkbox") {
           fieldStates.set(id, (comp as CheckboxComponent).checked || false);
         } else if (type === "RadioGroup") {
@@ -157,6 +158,18 @@ export function createA2UIFormComponent(
           const displayValue = value || theme.fg("dim", tf.placeholder || "(empty)");
           add(prefix + theme.fg("text", label + ":"));
           add("  " + displayValue);
+        } else if (comp.component === "TextArea") {
+          const ta = comp as TextAreaComponent;
+          const label = ta.label || fieldId;
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          const value = fieldValues.get(fieldId) || "";
+          const rows = ta.rows || 3;
+          const displayValue = value || theme.fg("dim", ta.placeholder || "(empty)");
+          add(prefix + theme.fg("text", label + ":"));
+          const valueLines = displayValue.split("\n");
+          for (let i = 0; i < rows; i++) {
+            add("  " + (valueLines[i] || ""));
+          }
           add("");
         } else if (comp.component === "Checkbox") {
           const cb = comp as CheckboxComponent;
@@ -283,20 +296,23 @@ export function createA2UIFormComponent(
         return;
       }
 
+      // Handle shift+tab BEFORE tab (order matters!)
+      if (matchesKey(key, "shift+tab")) {
+        // Shift+Tab: previous field
+        focusedButtonIndex = -1;
+        focusedFieldIndex = (focusedFieldIndex - 1 + fieldIds.length) % fieldIds.length;
+        refresh();
+        return;
+      }
+
       if (matchesKey(key, Key.tab)) {
-        if (matchesKey(key, "shift+tab") || key.includes("shift")) {
-          // Shift+Tab: previous field
-          focusedButtonIndex = -1;
-          focusedFieldIndex = (focusedFieldIndex - 1 + fieldIds.length) % fieldIds.length;
-        } else {
-          // Tab: next field or first button
-          if (focusedButtonIndex >= 0) {
-            focusedButtonIndex = (focusedButtonIndex + 1) % buttonIds.length;
-          } else if (focusedFieldIndex < fieldIds.length - 1) {
-            focusedFieldIndex++;
-          } else if (buttonIds.length > 0) {
-            focusedButtonIndex = 0;
-          }
+        // Tab: next field or first button
+        if (focusedButtonIndex >= 0) {
+          focusedButtonIndex = (focusedButtonIndex + 1) % buttonIds.length;
+        } else if (focusedFieldIndex < fieldIds.length - 1) {
+          focusedFieldIndex++;
+        } else if (buttonIds.length > 0) {
+          focusedButtonIndex = 0;
         }
         refresh();
         return;
@@ -312,7 +328,7 @@ export function createA2UIFormComponent(
             const data: FormData = {};
             for (const fieldId of fieldIds) {
               const comp = components.get(fieldId)!;
-              if (comp.component === "TextField") {
+              if (comp.component === "TextField" || comp.component === "TextArea") {
                 data[fieldId] = fieldValues.get(fieldId) || "";
               } else if (comp.component === "Checkbox") {
                 data[fieldId] = String(fieldStates.get(fieldId) || false);
@@ -386,7 +402,7 @@ export function createA2UIFormComponent(
       if (currentField) {
         const comp = components.get(currentField)!;
 
-        if (comp.component === "TextField") {
+        if (comp.component === "TextField" || comp.component === "TextArea") {
           // Handle backspace
           const isBackspace = 
             matchesKey(key, Key.backspace) || 
@@ -405,6 +421,14 @@ export function createA2UIFormComponent(
           if (key && key.length === 1 && key.charCodeAt(0) >= 32 && key.charCodeAt(0) < 127) {
             const current = fieldValues.get(currentField) || "";
             fieldValues.set(currentField, current + key);
+            refresh();
+            return;
+          }
+
+          // TextArea-specific: Handle Enter for newlines
+          if (comp.component === "TextArea" && matchesKey(key, Key.enter)) {
+            const current = fieldValues.get(currentField) || "";
+            fieldValues.set(currentField, current + "\n");
             refresh();
             return;
           }
