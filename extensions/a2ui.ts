@@ -482,26 +482,72 @@ export default function (pi: ExtensionAPI) {
  */
 async function callLLMWithA2UISchema(prompt: string, pi: ExtensionAPI): Promise<string> {
   // This is a placeholder - in real usage, would call the actual LLM
-  // For now, return mock response for testing
+  // For now, return mock response with actual form fields for testing
   console.log("[A2UI] Calling LLM with prompt:", prompt);
 
   return `
-I'll create a simple interface for you.
+I'll create an interactive form for you.
 
-\`\`\`json
 ---a2ui_JSON---
 [
-  {"version": "v0.9", "createSurface": {"surfaceId": "demo"}},
+  {"version": "v0.9", "createSurface": {"surfaceId": "contact_form"}},
   {"version": "v0.9", "updateComponents": {
-    "surfaceId": "demo",
+    "surfaceId": "contact_form",
     "components": [
-      {"id": "root", "component": "Column", "children": ["title", "content"]},
-      {"id": "title", "component": "Text", "text": "Welcome to A2UI"},
-      {"id": "content", "component": "Text", "text": "This is a simple interface generated from A2UI."}
+      {
+        "id": "form",
+        "component": "Column",
+        "children": ["title", "name_field", "email_field", "message_field", "buttons"]
+      },
+      {"id": "title", "component": "Text", "text": "Contact Form", "attributes": {"textAlignment": "center"}},
+      {
+        "id": "name_field",
+        "component": "TextField",
+        "label": "Your Name",
+        "placeholder": "Enter your name"
+      },
+      {
+        "id": "email_field",
+        "component": "TextField",
+        "label": "Email Address",
+        "placeholder": "Enter your email"
+      },
+      {
+        "id": "message_field",
+        "component": "TextField",
+        "label": "Message",
+        "placeholder": "Enter your message"
+      },
+      {
+        "id": "buttons",
+        "component": "Row",
+        "children": ["submit_btn", "cancel_btn"]
+      },
+      {
+        "id": "submit_btn",
+        "component": "Button",
+        "child": "submit_label",
+        "attributes": {"primary": true}
+      },
+      {
+        "id": "submit_label",
+        "component": "Text",
+        "text": "Submit"
+      },
+      {
+        "id": "cancel_btn",
+        "component": "Button",
+        "child": "cancel_label"
+      },
+      {
+        "id": "cancel_label",
+        "component": "Text",
+        "text": "Cancel"
+      }
     ]
   }}
 ]
-\`\`\`
+---a2ui_JSON---
   `;
 }
 
