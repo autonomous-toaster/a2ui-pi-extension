@@ -469,6 +469,16 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
+  // Register keyboard shortcut for testing
+  pi.registerShortcut("ctrl+shift+r", {
+    label: "Test Shortcut",
+    description: "Test logging for Ctrl+Shift+R",
+    handler: async (ctx) => {
+      console.error("[TEST] Ctrl+Shift+R was pressed!");
+      ctx.ui.notify("✓ Ctrl+Shift+R detected and working!", "success");
+    },
+  });
+
   // === MAIN DEMO COMMAND ===
   pi.registerCommand("a2ui-demo", {
     description: `/a2ui-demo [form|textarea|slider|tabs|accordion|toggle|numberinput|rating|combobox|datepicker|card|survey|settings|products|profile|team|showcase|dashboard|article]`,
