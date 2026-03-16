@@ -353,14 +353,6 @@ const demoExamples: Record<string, { name: string; example: string }> = {
 };
 
 export default function (pi: ExtensionAPI) {
-  console.error("[A2UI Extension] Loading");
-  console.error("[A2UI] imports:", {
-    parseA2UIResponse: typeof parseA2UIResponse,
-    validateA2UIMessages: typeof validateA2UIMessages,
-    extractComponents: typeof extractComponents,
-    createA2UIFormComponent: typeof createA2UIFormComponent,
-  });
-
   // NOTE: A2UI schema injection is disabled for demos
   // The demos use mocked A2UI data via /a2ui-demo <type>
   // When you want LLM to generate A2UI, use: pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
@@ -373,7 +365,6 @@ export default function (pi: ExtensionAPI) {
     description: `/a2ui-demo [form|textarea|slider|tabs|accordion|toggle|numberinput|rating|combobox|datepicker|card|survey|settings|products|profile|team|showcase|dashboard|article]`,
     handler: async (args, ctx) => {
       const demoType = args.trim() || "form";
-      console.error(`[A2UI] /a2ui-demo ${demoType} handler called`);
 
       const demo = demoExamples[demoType];
       if (!demo) {
@@ -381,11 +372,7 @@ export default function (pi: ExtensionAPI) {
         return;
       }
 
-      console.error(`[A2UI] Running demo: ${demo.name}`);
       await runDemoForm(demo.name, demo.example, ctx);
     },
   });
-
-  console.error("[A2UI Extension] Registered /a2ui-demo command");
-  console.error("[A2UI Extension] Usage: /a2ui-demo [form|textarea|slider|tabs|accordion|toggle|numberinput|rating|combobox|datepicker|card|survey|settings|products|profile|team|showcase|dashboard|article]");
 }
