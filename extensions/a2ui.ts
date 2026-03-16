@@ -211,6 +211,132 @@ const demoExamples: Record<string, { name: string; example: string }> = {
 ---a2ui_JSON---
 `,
   },
+  toggle: {
+    name: "Toggle Demo",
+    example: `
+---a2ui_JSON---
+[
+  {"version": "v0.9", "createSurface": {"surfaceId": "toggle_form"}},
+  {"version": "v0.9", "updateComponents": {
+    "surfaceId": "toggle_form",
+    "components": [
+      {"id": "title_label", "component": "Text", "text": "Preferences - Use Space to toggle"},
+      {"id": "notifications_toggle", "component": "Toggle", "label": "Enable Notifications", "checked": true},
+      {"id": "darkmode_toggle", "component": "Toggle", "label": "Dark Mode", "checked": false},
+      {"id": "analytics_toggle", "component": "Toggle", "label": "Send Analytics", "checked": true},
+      {"id": "auto_save_toggle", "component": "Toggle", "label": "Auto-save Changes", "checked": false},
+      {"id": "submit_btn", "component": "Button", "child": "submit_label"},
+      {"id": "submit_label", "component": "Text", "text": "Save"},
+      {"id": "cancel_btn", "component": "Button", "child": "cancel_label"},
+      {"id": "cancel_label", "component": "Text", "text": "Cancel"}
+    ]
+  }}
+]
+---a2ui_JSON---
+`,
+  },
+  numberinput: {
+    name: "NumberInput Demo",
+    example: `
+---a2ui_JSON---
+[
+  {"version": "v0.9", "createSurface": {"surfaceId": "number_form"}},
+  {"version": "v0.9", "updateComponents": {
+    "surfaceId": "number_form",
+    "components": [
+      {"id": "title_label", "component": "Text", "text": "Event Details - Enter numbers"},
+      {"id": "attendees_label", "component": "Text", "text": "Expected attendees (use ↑↓ or type)"},
+      {"id": "attendees", "component": "NumberInput", "label": "Attendees", "value": 50, "min": 0, "max": 10000, "step": 10},
+      {"id": "hours_label", "component": "Text", "text": "Event duration in hours"},
+      {"id": "duration", "component": "NumberInput", "label": "Duration (hours)", "value": 2, "min": 1, "max": 24},
+      {"id": "cost_label", "component": "Text", "text": "Budget ($)"},
+      {"id": "budget", "component": "NumberInput", "label": "Budget", "value": 1000, "min": 0, "max": 100000, "step": 100},
+      {"id": "submit_btn", "component": "Button", "child": "submit_label"},
+      {"id": "submit_label", "component": "Text", "text": "Submit"},
+      {"id": "cancel_btn", "component": "Button", "child": "cancel_label"},
+      {"id": "cancel_label", "component": "Text", "text": "Cancel"}
+    ]
+  }}
+]
+---a2ui_JSON---
+`,
+  },
+  rating: {
+    name: "Rating Demo",
+    example: `
+---a2ui_JSON---
+[
+  {"version": "v0.9", "createSurface": {"surfaceId": "rating_form"}},
+  {"version": "v0.9", "updateComponents": {
+    "surfaceId": "rating_form",
+    "components": [
+      {"id": "title_label", "component": "Text", "text": "Feedback Survey - Press 1-5 to rate"},
+      {"id": "product_label", "component": "Text", "text": "How would you rate our product?"},
+      {"id": "product_rating", "component": "Rating", "label": "Product Quality", "value": 0, "maxStars": 5},
+      {"id": "service_label", "component": "Text", "text": "How would you rate our service?"},
+      {"id": "service_rating", "component": "Rating", "label": "Service Quality", "value": 0, "maxStars": 5},
+      {"id": "support_label", "component": "Text", "text": "How would you rate our support?"},
+      {"id": "support_rating", "component": "Rating", "label": "Support Quality", "value": 0, "maxStars": 5},
+      {"id": "submit_btn", "component": "Button", "child": "submit_label"},
+      {"id": "submit_label", "component": "Text", "text": "Submit Feedback"},
+      {"id": "cancel_btn", "component": "Button", "child": "cancel_label"},
+      {"id": "cancel_label", "component": "Text", "text": "Cancel"}
+    ]
+  }}
+]
+---a2ui_JSON---
+`,
+  },
+  combobox: {
+    name: "Combobox Demo",
+    example: `
+---a2ui_JSON---
+[
+  {"version": "v0.9", "createSurface": {"surfaceId": "combo_form"}},
+  {"version": "v0.9", "updateComponents": {
+    "surfaceId": "combo_form",
+    "components": [
+      {"id": "title_label", "component": "Text", "text": "Job Application - Type to search or enter custom"},
+      {"id": "country_label", "component": "Text", "text": "Country (type to filter)"},
+      {"id": "country_combo", "component": "Combobox", "label": "Country", "placeholder": "USA, Canada, UK...", "options": [{"label": "USA", "value": "usa"}, {"label": "Canada", "value": "ca"}, {"label": "UK", "value": "uk"}, {"label": "Australia", "value": "au"}], "allowCustom": true},
+      {"id": "role_label", "component": "Text", "text": "Role (type to filter)"},
+      {"id": "role_combo", "component": "Combobox", "label": "Role", "placeholder": "Engineer, Manager, Designer...", "options": [{"label": "Software Engineer", "value": "engineer"}, {"label": "Product Manager", "value": "manager"}, {"label": "Designer", "value": "designer"}, {"label": "Sales", "value": "sales"}], "allowCustom": true},
+      {"id": "submit_btn", "component": "Button", "child": "submit_label"},
+      {"id": "submit_label", "component": "Text", "text": "Apply"},
+      {"id": "cancel_btn", "component": "Button", "child": "cancel_label"},
+      {"id": "cancel_label", "component": "Text", "text": "Cancel"}
+    ]
+  }}
+]
+---a2ui_JSON---
+`,
+  },
+  datepicker: {
+    name: "DatePicker Demo",
+    example: `
+---a2ui_JSON---
+[
+  {"version": "v0.9", "createSurface": {"surfaceId": "date_form"}},
+  {"version": "v0.9", "updateComponents": {
+    "surfaceId": "date_form",
+    "components": [
+      {"id": "title_label", "component": "Text", "text": "Event Booking - Enter dates as YYYY-MM-DD"},
+      {"id": "start_label", "component": "Text", "text": "Event start date"},
+      {"id": "start_date", "component": "DatePicker", "label": "Start Date", "placeholder": "2026-01-15"},
+      {"id": "end_label", "component": "Text", "text": "Event end date"},
+      {"id": "end_date", "component": "DatePicker", "label": "End Date", "placeholder": "2026-01-20"},
+      {"id": "deadline_label", "component": "Text", "text": "Registration deadline"},
+      {"id": "deadline_date", "component": "DatePicker", "label": "Deadline", "placeholder": "2026-01-10"},
+      {"id": "submit_btn", "component": "Button", "child": "submit_label"},
+      {"id": "submit_label", "component": "Text", "text": "Book Event"},
+      {"id": "cancel_btn", "component": "Button", "child": "cancel_label"},
+      {"id": "cancel_label", "component": "Text", "text": "Cancel"}
+    ]
+  }}
+]
+---a2ui_JSON---
+`,
+  },
   showcase: { name: "Product Showcase", example: getProductShowcaseExample() },
   dashboard: { name: "Dashboard", example: getDashboardExample() },
   article: { name: "Article", example: getArticleExample() },
@@ -234,7 +360,7 @@ export default function (pi: ExtensionAPI) {
 
   // === MAIN DEMO COMMAND ===
   pi.registerCommand("a2ui-demo", {
-    description: `/a2ui-demo [form|textarea|slider|survey|settings|products|profile|team|showcase|dashboard|article|overlay]`,
+    description: `/a2ui-demo [form|textarea|slider|tabs|accordion|toggle|numberinput|rating|combobox|datepicker|survey|settings|products|profile|team|showcase|dashboard|article|overlay]`,
     handler: async (args, ctx) => {
       const demoType = args.trim() || "form";
       console.error(`[A2UI] /a2ui-demo ${demoType} handler called`);
@@ -288,7 +414,7 @@ export default function (pi: ExtensionAPI) {
 
       const demo = demoExamples[demoType];
       if (!demo) {
-        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, textarea, slider, tabs, accordion, survey, settings, products, profile, team, showcase, dashboard, article, overlay`, "error");
+        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, textarea, slider, tabs, accordion, toggle, numberinput, rating, combobox, datepicker, survey, settings, products, profile, team, showcase, dashboard, article, overlay`, "error");
         return;
       }
 
