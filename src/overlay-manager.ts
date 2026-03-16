@@ -66,11 +66,7 @@ export function createA2UIOverlayManager(
             if (onOverlaySubmit) {
               onOverlaySubmit(formData);
             }
-            // Hide overlay instead of closing it (don't call done)
-            if (globalOverlayState) {
-              globalOverlayState.isVisible = false;
-              tui.requestRender();
-            }
+            done(formData);
           });
         }
 
@@ -79,7 +75,7 @@ export function createA2UIOverlayManager(
       },
 
       handleInput: (data: string): void => {
-        // Ctrl+U toggles overlay visibility
+        // Ctrl+U toggles overlay visibility (ALWAYS handle this)
         if (matchesKey(data, "ctrl+u")) {
           if (globalOverlayState) {
             globalOverlayState.isVisible = !globalOverlayState.isVisible;
@@ -88,8 +84,13 @@ export function createA2UIOverlayManager(
           return;
         }
 
-        // Pass input to form only if overlay is visible
-        if (globalOverlayState?.isVisible && innerComponent && isFormActive) {
+        // If overlay is NOT visible, don't consume any input
+        if (!globalOverlayState?.isVisible) {
+          return; // Let input fall through to terminal
+        }
+
+        // Only pass input to form when visible
+        if (innerComponent && isFormActive) {
           innerComponent.handleInput(data);
         }
       },

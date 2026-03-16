@@ -4,7 +4,7 @@
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { Text, matchesKey, Key } from "@mariozechner/pi-tui";
+import { Text } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 
 import type { A2UIServerMessage } from "../src/types";
@@ -12,7 +12,6 @@ import { createA2UIBeforeAgentStartHandler, injectA2UISchema } from "../src/prom
 import { parseA2UIResponse, extractSurfaceId, extractComponents } from "../src/parser";
 import { validateA2UIMessages } from "../src/validation";
 import { createA2UIFormComponent, type FormData } from "../src/interactive-form-v3";
-import { createA2UIOverlayManager } from "../src/overlay-manager";
 import {
   getPhase2ASurveyExample,
   getPhase2ASettingsExample,
@@ -26,15 +25,11 @@ import {
   getArticleExample,
 } from "../src/examples-advanced";
 
-// Global persistent overlay state
-let lastOverlayManager: any = null;
-
 // Helper to run example forms with shared logic
 async function runDemoForm(
   name: string,
   example: string,
-  ctx: any,
-  useOverlay: boolean = false
+  ctx: any
 ) {
   if (!ctx.hasUI) {
     ctx.ui.notify("Error: UI not available", "error");
@@ -59,25 +54,12 @@ async function runDemoForm(
     return;
   }
 
-  const componentFn = useOverlay
-    ? createA2UIOverlayManager(components, ctx.ui.theme, (data) => {
-        if (data) {
-          ctx.ui.notify(`${name} submitted (Ctrl+U to show)`, "info");
-        }
-      })
-    : createA2UIFormComponent(components, ctx.ui.theme);
+  // Always use regular form component (no overlay)
+  const componentFn = createA2UIFormComponent(components, ctx.ui.theme);
 
-  const formData = await ctx.ui.custom(componentFn, useOverlay ? {
-    overlay: true,
-    overlayOptions: {
-      width: "80%",
-      maxHeight: "85%",
-      anchor: "center",
-      margin: { top: 2 },
-    },
-  } : undefined);
+  const formData = await ctx.ui.custom(componentFn);
 
-  if (formData && !useOverlay) {
+  if (formData) {
     ctx.ui.notify(`${name} submitted successfully`, "info");
   }
 }
@@ -400,7 +382,7 @@ export default function (pi: ExtensionAPI) {
       }
 
       console.error(`[A2UI] Running demo: ${demo.name}`);
-      await runDemoForm(demo.name, demo.example, ctx, true);
+      await runDemoForm(demo.name, demo.example, ctx);
     },
   });
 
