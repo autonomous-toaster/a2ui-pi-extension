@@ -70,7 +70,7 @@ This extension provides:
 pi install git:github.com/autonomous-toaster/a2ui-pi-extension
 
 # Local (development)
-pi install ./a2ui-pi-extension
+pi install /path/to/a2ui-pi-extension
 ```
 
 Then reload pi extensions:
@@ -79,7 +79,30 @@ Then reload pi extensions:
 /reload
 ```
 
-## Usage
+## Quick Start: Demo Commands
+
+After installation, try these commands (no LLM involved, pure mocked rendering):
+
+```bash
+/a2ui-demo form         # Phase 1: Basic form with TextFields
+/a2ui-demo survey       # Phase 2A: All component types  
+/a2ui-demo settings     # Phase 2A: Settings form
+/a2ui-demo products     # Phase 2A: Product list
+/a2ui-demo profile      # Phase 2B: Profile with avatar
+/a2ui-demo team         # Phase 2B: Team selection
+/a2ui-demo showcase     # Phase 2B: Product showcase
+/a2ui-demo dashboard    # Phase 2B: Dashboard
+/a2ui-demo article      # Phase 2B: Article
+/a2ui-overlay          # Overlay demo - press Ctrl+U to toggle visibility
+```
+
+**⚠️ Troubleshooting**: If you see "I'll generate an interactive A2UI form" response instead of a form appearing, the extension is not loaded. Make sure you:
+1. Ran `pi install ...` (see above)
+2. Ran `/reload` to load the extension
+
+See [QUICK_START.md](./QUICK_START.md) for detailed setup and troubleshooting.
+
+## Usage: LLM-Driven UI Generation
 
 ### Basic: Request a UI
 
