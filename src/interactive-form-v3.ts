@@ -386,6 +386,7 @@ export function createA2UIFormComponent(
       const focusedComp = focusedButtonIndex === -1 ? components.get(fieldIds[focusedFieldIndex]) : null;
       const isList = focusedComp?.component === "List";
       const isRadioGroup = focusedComp?.component === "RadioGroup";
+      const isAccordion = focusedComp?.component === "Accordion";
 
       // SPECIAL KEYS: Check before anything else
       if (matchesKey(key, Key.escape)) {
@@ -472,6 +473,13 @@ export function createA2UIFormComponent(
           state.selected = comp.options[nextIdx]?.value || state.selected;
           refresh();
           return;
+        } else if (isAccordion) {
+          const state = fieldStates.get(fieldIds[focusedFieldIndex]);
+          const comp = components.get(fieldIds[focusedFieldIndex]) as AccordionComponent;
+          state.selectedIndex = Math.min(state.selectedIndex + 1, comp.sections.length - 1);
+          fieldStates.set(fieldIds[focusedFieldIndex], state);
+          refresh();
+          return;
         } else {
           focusedButtonIndex = -1;
           focusedFieldIndex = Math.min(focusedFieldIndex + 1, fieldIds.length - 1);
@@ -492,6 +500,13 @@ export function createA2UIFormComponent(
           const currentIdx = comp.options.findIndex((o) => o.value === state.selected);
           const nextIdx = Math.max(currentIdx - 1, 0);
           state.selected = comp.options[nextIdx]?.value || state.selected;
+          refresh();
+          return;
+        } else if (isAccordion) {
+          const state = fieldStates.get(fieldIds[focusedFieldIndex]);
+          const comp = components.get(fieldIds[focusedFieldIndex]) as AccordionComponent;
+          state.selectedIndex = Math.max(state.selectedIndex - 1, 0);
+          fieldStates.set(fieldIds[focusedFieldIndex], state);
           refresh();
           return;
         } else {
