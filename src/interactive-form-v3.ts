@@ -288,6 +288,58 @@ export function createA2UIFormComponent(
             }
           }
           add("");
+        } else if (comp.component === "Toggle") {
+          const toggle = comp as ToggleComponent;
+          const label = toggle.label || fieldId;
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          const checked = fieldStates.get(fieldId) || false;
+          const toggleSymbol = checked ? "[●]" : "[ ]";
+          add(prefix + theme.fg("text", label + ":"));
+          add("  " + theme.fg(checked ? "accent" : "dim", toggleSymbol));
+          add("");
+        } else if (comp.component === "NumberInput") {
+          const ni = comp as NumberInputComponent;
+          const label = ni.label || fieldId;
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          const value = fieldValues.get(fieldId) || "";
+          const displayValue = value || theme.fg("dim", ni.placeholder || "(empty)");
+          add(prefix + theme.fg("text", label + ":"));
+          add("  " + displayValue);
+          add("");
+        } else if (comp.component === "Rating") {
+          const rating = comp as RatingComponent;
+          const label = rating.label || fieldId;
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          const value = fieldStates.get(fieldId) || 0;
+          const maxStars = rating.maxStars || 5;
+          let stars = "";
+          for (let i = 0; i < maxStars; i++) {
+            stars += i < value ? "★" : "☆";
+          }
+          add(prefix + theme.fg("text", label + ":"));
+          add("  " + theme.fg(value > 0 ? "accent" : "dim", stars + ` (${value}/${maxStars})`));
+          add("");
+        } else if (comp.component === "Combobox") {
+          const cb = comp as ComboboxComponent;
+          const label = cb.label || fieldId;
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          const value = fieldValues.get(fieldId) || "";
+          const displayValue = value || theme.fg("dim", cb.placeholder || "(empty)");
+          add(prefix + theme.fg("text", label + ":"));
+          add("  " + displayValue);
+          if (isFocused) {
+            add("  " + theme.fg("dim", "Type to search, arrow keys to select"));
+          }
+          add("");
+        } else if (comp.component === "DatePicker") {
+          const dp = comp as DatePickerComponent;
+          const label = dp.label || fieldId;
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          const value = fieldValues.get(fieldId) || "";
+          const displayValue = value || theme.fg("dim", dp.placeholder || "YYYY-MM-DD");
+          add(prefix + theme.fg("text", label + ":"));
+          add("  " + displayValue);
+          add("");
         } else if (comp.component === "Checkbox") {
           const cb = comp as CheckboxComponent;
           const checked = fieldStates.get(fieldId) || false;
@@ -457,6 +509,16 @@ export function createA2UIFormComponent(
               } else if (comp.component === "Accordion") {
                 const state = fieldStates.get(fieldId) || { expanded: {}, selectedIndex: 0 };
                 data[fieldId] = JSON.stringify(state.expanded);
+              } else if (comp.component === "Toggle") {
+                data[fieldId] = String(fieldStates.get(fieldId) || false);
+              } else if (comp.component === "NumberInput") {
+                data[fieldId] = fieldValues.get(fieldId) || "0";
+              } else if (comp.component === "Rating") {
+                data[fieldId] = String(fieldStates.get(fieldId) || 0);
+              } else if (comp.component === "Combobox") {
+                data[fieldId] = fieldValues.get(fieldId) || "";
+              } else if (comp.component === "DatePicker") {
+                data[fieldId] = fieldValues.get(fieldId) || "";
               } else if (comp.component === "Checkbox") {
                 data[fieldId] = String(fieldStates.get(fieldId) || false);
               } else if (comp.component === "RadioGroup" || comp.component === "SelectDropdown" || comp.component === "List") {
@@ -672,6 +734,146 @@ export function createA2UIFormComponent(
             state.selectedIndex = Math.max(state.selectedIndex - 1, 0);
             fieldStates.set(currentField, state);
             refresh();
+            return;
+          }
+        }
+
+        if (comp.component === "Toggle") {
+          if (matchesKey(key, Key.space)) {
+            const current = fieldStates.get(currentField) || false;
+            fieldStates.set(currentField, !current);
+            refresh();
+            return;
+          }
+        }
+
+        if (comp.component === "NumberInput") {
+          const ni = comp as NumberInputComponent;
+          const min = ni.min || 0;
+          const max = ni.max || 999999;
+          const step = ni.step || 1;
+          const currentVal = parseInt(fieldValues.get(currentField) || "0");
+          
+          // Backspace
+          const isBackspace = key === "\x7F" || key === "\x08";
+          if (isBackspace) {
+            const current = fieldValues.get(currentField) || "";
+            fieldValues.set(currentField, current.slice(0, -1));
+            refresh();
+            return;
+          }
+          
+          // Arrow keys for increment/decrement
+          if (matchesKey(key, Key.up)) {
+            const newVal = Math.min(max, currentVal + step);
+            fieldValues.set(currentField, String(newVal));
+            refresh();
+            return;
+          }
+          
+          if (matchesKey(key, Key.down)) {
+            const newVal = Math.max(min, currentVal - step);
+            fieldValues.set(currentField, String(newVal));
+            refresh();
+            return;
+          }
+          
+          // Number input
+          if (key && key.length === 1 && key >= "0" && key <= "9") {
+            const current = fieldValues.get(currentField) || "";
+            fieldValues.set(currentField, current + key);
+            refresh();
+            return;
+          }
+          
+          // Minus sign
+          if (key === "-") {
+            const current = fieldValues.get(currentField) || "";
+            if (!current.includes("-")) {
+              fieldValues.set(currentField, "-" + current);
+              refresh();
+            }
+            return;
+          }
+        }
+
+        if (comp.component === "Rating") {
+          const rating = comp as RatingComponent;
+          const maxStars = rating.maxStars || 5;
+          
+          // Number keys 1-5 for rating
+          if (key && key.length === 1 && key >= "1" && key <= "9") {
+            const num = parseInt(key);
+            const newVal = Math.min(num, maxStars);
+            fieldStates.set(currentField, newVal);
+            refresh();
+            return;
+          }
+          
+          // Space to clear
+          if (matchesKey(key, Key.space)) {
+            fieldStates.set(currentField, 0);
+            refresh();
+            return;
+          }
+          
+          // Arrow keys for increment
+          if (matchesKey(key, Key.right)) {
+            const current = fieldStates.get(currentField) || 0;
+            const newVal = Math.min(current + 1, maxStars);
+            fieldStates.set(currentField, newVal);
+            refresh();
+            return;
+          }
+          
+          if (matchesKey(key, Key.left)) {
+            const current = fieldStates.get(currentField) || 0;
+            const newVal = Math.max(current - 1, 0);
+            fieldStates.set(currentField, newVal);
+            refresh();
+            return;
+          }
+        }
+
+        if (comp.component === "Combobox") {
+          const cb = comp as ComboboxComponent;
+          
+          // Backspace
+          const isBackspace = key === "\x7F" || key === "\x08";
+          if (isBackspace) {
+            const current = fieldValues.get(currentField) || "";
+            fieldValues.set(currentField, current.slice(0, -1));
+            refresh();
+            return;
+          }
+          
+          // Character input
+          if (key && key.length === 1 && key.charCodeAt(0) >= 32 && key.charCodeAt(0) < 127) {
+            const current = fieldValues.get(currentField) || "";
+            fieldValues.set(currentField, current + key);
+            refresh();
+            return;
+          }
+        }
+
+        if (comp.component === "DatePicker") {
+          // Backspace
+          const isBackspace = key === "\x7F" || key === "\x08";
+          if (isBackspace) {
+            const current = fieldValues.get(currentField) || "";
+            fieldValues.set(currentField, current.slice(0, -1));
+            refresh();
+            return;
+          }
+          
+          // Number and dash input for dates
+          if ((key >= "0" && key <= "9") || key === "-") {
+            const current = fieldValues.get(currentField) || "";
+            // Simple: just accept digits and dashes, validate on submit
+            if (current.length < 10) {
+              fieldValues.set(currentField, current + key);
+              refresh();
+            }
             return;
           }
         }
