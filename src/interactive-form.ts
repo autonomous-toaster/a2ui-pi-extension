@@ -127,6 +127,8 @@ export class InteractiveA2UIForm {
   handleInput(data: string): void {
     console.log("[InteractiveA2UIForm] handleInput called with:", JSON.stringify(data));
     
+    let stateChanged = false;
+
     // Navigation: Tab or Down arrow
     if (matchesKey(data, Key.tab) || matchesKey(data, Key.down)) {
       console.log("[InteractiveA2UIForm] Tab/Down pressed");
@@ -134,14 +136,19 @@ export class InteractiveA2UIForm {
         // In fields - move to next field or buttons
         if (this.fieldIds.length > 1) {
           this.focusedFieldIndex = (this.focusedFieldIndex + 1) % this.fieldIds.length;
+          stateChanged = true;
         } else if (this.buttonIds.length > 0) {
           this.focusedButtonIndex = 0;
+          stateChanged = true;
         }
       } else {
         // In buttons - cycle
         this.focusedButtonIndex = (this.focusedButtonIndex + 1) % this.buttonIds.length;
+        stateChanged = true;
       }
-      this.invalidate();
+      if (stateChanged) {
+        this.invalidate();
+      }
       return;
     }
 
@@ -151,17 +158,22 @@ export class InteractiveA2UIForm {
         // In fields - move to previous
         if (this.fieldIds.length > 1) {
           this.focusedFieldIndex = (this.focusedFieldIndex - 1 + this.fieldIds.length) % this.fieldIds.length;
+          stateChanged = true;
         }
       } else {
         // In buttons - move back to fields or prev button
         if (this.focusedButtonIndex === 0) {
           this.focusedButtonIndex = -1;
           this.focusedFieldIndex = this.fieldIds.length - 1;
+          stateChanged = true;
         } else {
           this.focusedButtonIndex--;
+          stateChanged = true;
         }
       }
-      this.invalidate();
+      if (stateChanged) {
+        this.invalidate();
+      }
       return;
     }
 
@@ -171,6 +183,7 @@ export class InteractiveA2UIForm {
       if (fieldId) {
         const current = this.fieldValues.get(fieldId) || "";
         this.fieldValues.set(fieldId, current + data);
+        stateChanged = true;
         this.invalidate();
       }
       return;
@@ -184,6 +197,7 @@ export class InteractiveA2UIForm {
           const current = this.fieldValues.get(fieldId) || "";
           if (current.length > 0) {
             this.fieldValues.set(fieldId, current.slice(0, -1));
+            stateChanged = true;
             this.invalidate();
           }
         }
@@ -214,10 +228,12 @@ export class InteractiveA2UIForm {
       } else if (this.fieldIds.length > 1) {
         // In field, move to next
         this.focusedFieldIndex = (this.focusedFieldIndex + 1) % this.fieldIds.length;
+        stateChanged = true;
         this.invalidate();
       } else if (this.buttonIds.length > 0) {
         // Only one field, move to buttons
         this.focusedButtonIndex = 0;
+        stateChanged = true;
         this.invalidate();
       }
       return;

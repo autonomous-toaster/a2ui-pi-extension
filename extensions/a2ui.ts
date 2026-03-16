@@ -172,8 +172,12 @@ export default function (pi: ExtensionAPI) {
               invalidate: () => form.invalidate(),
               handleInput: (data) => {
                 console.log("[A2UI Tool wrapper] handleInput called with:", JSON.stringify(data));
+                const oldCached = form['cachedRender'];
                 form.handleInput(data);
-                tui.requestRender();
+                // Only request render if state changed (cache was invalidated)
+                if (form['cachedRender'] === undefined && oldCached !== undefined) {
+                  tui.requestRender();
+                }
               },
             };
           },
@@ -595,8 +599,12 @@ I'll create a contact form for you.
           invalidate: () => form.invalidate(),
           handleInput: (data) => {
             console.log("[A2UI] Command: handleInput called with", JSON.stringify(data));
+            const oldCached = form['cachedRender'];
             form.handleInput(data);
-            tui.requestRender();
+            // Only request render if state changed (cache was invalidated)
+            if (form['cachedRender'] === undefined && oldCached !== undefined) {
+              tui.requestRender();
+            }
           },
         };
       });
