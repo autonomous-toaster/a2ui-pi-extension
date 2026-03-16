@@ -77,8 +77,6 @@ async function runDemoForm(
   if (formData && !useOverlay) {
     ctx.ui.notify(`${name} submitted successfully`, "info");
   }
-
-  return formData; // Return form data to signal command completion
 }
 
 export default function (pi: ExtensionAPI) {
@@ -114,7 +112,7 @@ export default function (pi: ExtensionAPI) {
 ]
 ---a2ui_JSON---
 `;
-      return runDemoForm("Contact Form", mockA2UI, ctx, false);
+      await runDemoForm("Contact Form", mockA2UI, ctx, false);
     },
   });
 
@@ -122,21 +120,21 @@ export default function (pi: ExtensionAPI) {
   pi.registerCommand("a2ui-demo survey", {
     description: "Phase 2A: Product Survey (all component types)",
     handler: async (_args, ctx) => {
-      return runDemoForm("Product Survey", getPhase2ASurveyExample(), ctx, false);
+      await runDemoForm("Product Survey", getPhase2ASurveyExample(), ctx, false);
     },
   });
 
   pi.registerCommand("a2ui-demo settings", {
     description: "Phase 2A: Settings form (checkboxes, select, radio)",
     handler: async (_args, ctx) => {
-      return runDemoForm("Settings", getPhase2ASettingsExample(), ctx, false);
+      await runDemoForm("Settings", getPhase2ASettingsExample(), ctx, false);
     },
   });
 
   pi.registerCommand("a2ui-demo products", {
     description: "Phase 2A: Product list (list, radio, checkbox)",
     handler: async (_args, ctx) => {
-      return runDemoForm("Product List", getPhase2AProductListExample(), ctx, false);
+      await runDemoForm("Product List", getPhase2AProductListExample(), ctx, false);
     },
   });
 
@@ -144,35 +142,35 @@ export default function (pi: ExtensionAPI) {
   pi.registerCommand("a2ui-demo profile", {
     description: "Phase 2B+: Profile card with avatar image",
     handler: async (_args, ctx) => {
-      return runDemoForm("Profile Card", getProfileCardExample(), ctx, false);
+      await runDemoForm("Profile Card", getProfileCardExample(), ctx, false);
     },
   });
 
   pi.registerCommand("a2ui-demo team", {
     description: "Phase 2B+: Team selection with member avatars",
     handler: async (_args, ctx) => {
-      return runDemoForm("Team Selection", getTeamSelectionExample(), ctx, false);
+      await runDemoForm("Team Selection", getTeamSelectionExample(), ctx, false);
     },
   });
 
   pi.registerCommand("a2ui-demo showcase", {
     description: "Phase 2B+: Product showcase with image (e-commerce)",
     handler: async (_args, ctx) => {
-      return runDemoForm("Product Showcase", getProductShowcaseExample(), ctx, false);
+      await runDemoForm("Product Showcase", getProductShowcaseExample(), ctx, false);
     },
   });
 
   pi.registerCommand("a2ui-demo dashboard", {
     description: "Phase 2B+: User dashboard with profile image",
     handler: async (_args, ctx) => {
-      return runDemoForm("Dashboard", getDashboardExample(), ctx, false);
+      await runDemoForm("Dashboard", getDashboardExample(), ctx, false);
     },
   });
 
   pi.registerCommand("a2ui-demo article", {
     description: "Phase 2B+: Article with featured image and feedback",
     handler: async (_args, ctx) => {
-      return runDemoForm("Article", getArticleExample(), ctx, false);
+      await runDemoForm("Article", getArticleExample(), ctx, false);
     },
   });
 
