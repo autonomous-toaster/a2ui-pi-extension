@@ -80,6 +80,8 @@ async function runDemoForm(
 }
 
 export default function (pi: ExtensionAPI) {
+  console.log("[A2UI Extension] Loading - registering 10 demo commands");
+  
   // NOTE: A2UI schema injection is disabled for demos
   // The demos use mocked A2UI data via /a2ui-demo commands
   // When you want LLM to generate A2UI, use: pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
