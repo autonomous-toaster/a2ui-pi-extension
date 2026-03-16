@@ -15,6 +15,12 @@ import type {
   SliderComponent,
   TabsComponent,
   AccordionComponent,
+  ToggleComponent,
+  NumberInputComponent,
+  RatingComponent,
+  ComboboxComponent,
+  DatePickerComponent,
+  FileUploadComponent,
   ButtonComponent, 
   TextComponent, 
   CheckboxComponent,
@@ -67,8 +73,9 @@ export function createA2UIFormComponent(
     // Scan for interactive components
     for (const [id, comp] of components) {
       const type = comp.component;
-      if (type === "TextField" || type === "TextArea" || type === "Slider" || type === "Tabs" || type === "Accordion" || type === "Checkbox" || type === "RadioGroup" || 
-          type === "SelectDropdown" || type === "List" || type === "Image") {
+      if (type === "TextField" || type === "TextArea" || type === "Slider" || type === "Tabs" || type === "Accordion" || 
+          type === "Toggle" || type === "NumberInput" || type === "Rating" || type === "Combobox" || type === "DatePicker" || type === "FileUpload" ||
+          type === "Checkbox" || type === "RadioGroup" || type === "SelectDropdown" || type === "List" || type === "Image") {
         fieldIds.push(id);
         if (type === "TextField" || type === "TextArea") {
           fieldValues.set(id, (comp as TextFieldComponent | TextAreaComponent).value || "");
@@ -85,6 +92,18 @@ export function createA2UIFormComponent(
             expanded[section.id] = section.expanded || false;
           }
           fieldStates.set(id, { expanded, selectedIndex: 0 });
+        } else if (type === "Toggle") {
+          fieldStates.set(id, (comp as ToggleComponent).checked || false);
+        } else if (type === "NumberInput") {
+          fieldValues.set(id, String((comp as NumberInputComponent).value || ""));
+        } else if (type === "Rating") {
+          fieldStates.set(id, (comp as RatingComponent).value || 0);
+        } else if (type === "Combobox") {
+          fieldValues.set(id, (comp as ComboboxComponent).value || "");
+        } else if (type === "DatePicker") {
+          fieldValues.set(id, (comp as DatePickerComponent).value || "");
+        } else if (type === "FileUpload") {
+          fieldValues.set(id, "");
         } else if (type === "Checkbox") {
           fieldStates.set(id, (comp as CheckboxComponent).checked || false);
         } else if (type === "RadioGroup") {

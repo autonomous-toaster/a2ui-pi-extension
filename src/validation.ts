@@ -89,7 +89,7 @@ export function validateComponent(component: any): A2UIValidationResult {
 
   if (!component.component) {
     errors.push("Component missing required field: component");
-  } else if (!["Text", "Button", "TextField", "TextArea", "Slider", "Tabs", "Accordion", "Checkbox", "RadioGroup", "SelectDropdown", "List", "Image", "Card", "Column", "Row"].includes(component.component)) {
+  } else if (!["Text", "Button", "TextField", "TextArea", "Slider", "Tabs", "Accordion", "Toggle", "NumberInput", "Rating", "Combobox", "DatePicker", "FileUpload", "Checkbox", "RadioGroup", "SelectDropdown", "List", "Image", "Card", "Column", "Row"].includes(component.component)) {
     errors.push(`Invalid component type: ${component.component}`);
   }
 
@@ -136,6 +136,33 @@ export function validateComponent(component: any): A2UIValidationResult {
       if (!component.sections || !Array.isArray(component.sections) || component.sections.length === 0) {
         errors.push("Accordion component must have at least one section");
       }
+      break;
+    case "Toggle":
+      // No specific validation needed
+      break;
+    case "NumberInput":
+      if (component.min !== undefined && component.max !== undefined && component.min > component.max) {
+        errors.push("NumberInput: min cannot be greater than max");
+      }
+      if (component.step !== undefined && component.step <= 0) {
+        errors.push("NumberInput: step must be positive");
+      }
+      break;
+    case "Rating":
+      if (component.maxStars !== undefined && component.maxStars < 1) {
+        errors.push("Rating: maxStars must be at least 1");
+      }
+      break;
+    case "Combobox":
+      if (!component.options || !Array.isArray(component.options)) {
+        errors.push("Combobox must have options array");
+      }
+      break;
+    case "DatePicker":
+      // No specific validation needed
+      break;
+    case "FileUpload":
+      // No specific validation needed
       break;
     case "Checkbox":
       if (!component.label) {

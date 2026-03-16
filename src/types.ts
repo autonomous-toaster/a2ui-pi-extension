@@ -88,6 +88,78 @@ export interface AccordionComponent extends A2UIComponent {
   allowMultiple?: boolean;
 }
 
+export interface ToggleComponent extends A2UIComponent {
+  component: "Toggle";
+  label?: string;
+  checked?: boolean;
+  attributes?: {
+    required?: boolean;
+    disabled?: boolean;
+  };
+}
+
+export interface NumberInputComponent extends A2UIComponent {
+  component: "NumberInput";
+  label?: string;
+  value?: number;
+  placeholder?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  attributes?: {
+    required?: boolean;
+    disabled?: boolean;
+  };
+}
+
+export interface RatingComponent extends A2UIComponent {
+  component: "Rating";
+  label?: string;
+  value?: number;
+  maxStars?: number;
+  attributes?: {
+    required?: boolean;
+    disabled?: boolean;
+  };
+}
+
+export interface ComboboxComponent extends A2UIComponent {
+  component: "Combobox";
+  label?: string;
+  value?: string;
+  placeholder?: string;
+  options: Array<{ label: string; value: string }>;
+  allowCustom?: boolean;
+  attributes?: {
+    required?: boolean;
+    disabled?: boolean;
+  };
+}
+
+export interface DatePickerComponent extends A2UIComponent {
+  component: "DatePicker";
+  label?: string;
+  value?: string;
+  placeholder?: string;
+  min?: string;
+  max?: string;
+  attributes?: {
+    required?: boolean;
+    disabled?: boolean;
+  };
+}
+
+export interface FileUploadComponent extends A2UIComponent {
+  component: "FileUpload";
+  label?: string;
+  accept?: string;
+  multiple?: boolean;
+  attributes?: {
+    required?: boolean;
+    disabled?: boolean;
+  };
+}
+
 export interface CardComponent extends A2UIComponent {
   component: "Card";
   children?: string[]; // IDs of child components
