@@ -126,6 +126,34 @@ const demoExamples: Record<string, { name: string; example: string }> = {
 ---a2ui_JSON---
 `,
   },
+  slider: {
+    name: "Slider Demo",
+    example: `
+---a2ui_JSON---
+[
+  {"version": "v0.9", "createSurface": {"surfaceId": "slider_form"}},
+  {"version": "v0.9", "updateComponents": {
+    "surfaceId": "slider_form",
+    "components": [
+      {"id": "title_label", "component": "Text", "text": "Settings - Adjust Values"},
+      {"id": "volume_label", "component": "Text", "text": "Volume: Use arrow keys or type numbers"},
+      {"id": "volume_slider", "component": "Slider", "label": "Volume", "value": 50, "min": 0, "max": 100, "step": 5},
+      {"id": "brightness_label", "component": "Text", "text": "Brightness: Use arrow keys or type numbers"},
+      {"id": "brightness_slider", "component": "Slider", "label": "Brightness", "value": 75, "min": 0, "max": 100, "step": 1},
+      {"id": "price_label", "component": "Text", "text": "Price Range: Set your budget"},
+      {"id": "price_slider", "component": "Slider", "label": "Max Price ($)", "value": 500, "min": 0, "max": 1000, "step": 50},
+      {"id": "difficulty_label", "component": "Text", "text": "Difficulty Level"},
+      {"id": "difficulty_slider", "component": "Slider", "label": "Difficulty", "value": 5, "min": 1, "max": 10, "step": 1},
+      {"id": "submit_btn", "component": "Button", "child": "submit_label"},
+      {"id": "submit_label", "component": "Text", "text": "Save Settings"},
+      {"id": "cancel_btn", "component": "Button", "child": "cancel_label"},
+      {"id": "cancel_label", "component": "Text", "text": "Cancel"}
+    ]
+  }}
+]
+---a2ui_JSON---
+`,
+  },
   survey: { name: "Product Survey", example: getPhase2ASurveyExample() },
   settings: { name: "Settings", example: getPhase2ASettingsExample() },
   products: { name: "Product List", example: getPhase2AProductListExample() },
@@ -159,6 +187,7 @@ export default function (pi: ExtensionAPI) {
 Available demos:
   /a2ui-demo form         - Basic contact form with text fields
   /a2ui-demo textarea     - TextArea demo (multi-line input)
+  /a2ui-demo slider       - Slider controls (volume, brightness, price, difficulty)
   /a2ui-demo survey       - Product survey with all Phase 2A components
   /a2ui-demo settings     - Settings form with checkboxes and radio buttons
   /a2ui-demo products     - Product list with selection
@@ -226,7 +255,7 @@ Navigation:
 
       const demo = demoExamples[demoType];
       if (!demo) {
-        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, textarea, survey, settings, products, profile, team, showcase, dashboard, article, overlay`, "error");
+        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, textarea, slider, survey, settings, products, profile, team, showcase, dashboard, article, overlay`, "error");
         return;
       }
 

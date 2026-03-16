@@ -11,7 +11,8 @@
 import { matchesKey, Key, truncateToWidth } from "@mariozechner/pi-tui";
 import type { 
   TextFieldComponent,
-  TextAreaComponent, 
+  TextAreaComponent,
+  SliderComponent,
   ButtonComponent, 
   TextComponent, 
   CheckboxComponent,
@@ -64,11 +65,13 @@ export function createA2UIFormComponent(
     // Scan for interactive components
     for (const [id, comp] of components) {
       const type = comp.component;
-      if (type === "TextField" || type === "TextArea" || type === "Checkbox" || type === "RadioGroup" || 
+      if (type === "TextField" || type === "TextArea" || type === "Slider" || type === "Checkbox" || type === "RadioGroup" || 
           type === "SelectDropdown" || type === "List" || type === "Image") {
         fieldIds.push(id);
         if (type === "TextField" || type === "TextArea") {
           fieldValues.set(id, (comp as TextFieldComponent | TextAreaComponent).value || "");
+        } else if (type === "Slider") {
+          fieldValues.set(id, String((comp as SliderComponent).value || (comp as SliderComponent).min || 0));
         } else if (type === "Checkbox") {
           fieldStates.set(id, (comp as CheckboxComponent).checked || false);
         } else if (type === "RadioGroup") {
@@ -170,6 +173,30 @@ export function createA2UIFormComponent(
           for (let i = 0; i < rows; i++) {
             add("  " + (valueLines[i] || ""));
           }
+          add("");
+        } else if (comp.component === "Slider") {
+          const slider = comp as SliderComponent;
+          const label = slider.label || fieldId;
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          const currentVal = parseInt(fieldValues.get(fieldId) || String(slider.min || 0));
+          const min = slider.min || 0;
+          const max = slider.max || 100;
+          const step = slider.step || 1;
+          
+          // Draw slider bar
+          const barWidth = 20;
+          const ratio = (currentVal - min) / (max - min);
+          const filledPos = Math.floor(barWidth * ratio);
+          let bar = "[";
+          for (let i = 0; i < barWidth; i++) {
+            if (i < filledPos) bar += "=";
+            else if (i === filledPos) bar += ">";
+            else bar += " ";
+          }
+          bar += "]";
+          
+          add(prefix + theme.fg("text", label + ":"));
+          add("  " + theme.fg("accent", bar) + ` ${currentVal}/${max}`);
           add("");
         } else if (comp.component === "Checkbox") {
           const cb = comp as CheckboxComponent;
@@ -330,6 +357,8 @@ export function createA2UIFormComponent(
               const comp = components.get(fieldId)!;
               if (comp.component === "TextField" || comp.component === "TextArea") {
                 data[fieldId] = fieldValues.get(fieldId) || "";
+              } else if (comp.component === "Slider") {
+                data[fieldId] = fieldValues.get(fieldId) || "0";
               } else if (comp.component === "Checkbox") {
                 data[fieldId] = String(fieldStates.get(fieldId) || false);
               } else if (comp.component === "RadioGroup" || comp.component === "SelectDropdown" || comp.component === "List") {
@@ -431,6 +460,39 @@ export function createA2UIFormComponent(
             fieldValues.set(currentField, current + "\n");
             refresh();
             return;
+          }
+        }
+
+        if (comp.component === "Slider") {
+          const slider = comp as SliderComponent;
+          const min = slider.min || 0;
+          const max = slider.max || 100;
+          const step = slider.step || 1;
+          const currentVal = parseInt(fieldValues.get(currentField) || String(min));
+          
+          if (matchesKey(key, Key.left)) {
+            const newVal = Math.max(min, currentVal - step);
+            fieldValues.set(currentField, String(newVal));
+            refresh();
+            return;
+          }
+          
+          if (matchesKey(key, Key.right)) {
+            const newVal = Math.min(max, currentVal + step);
+            fieldValues.set(currentField, String(newVal));
+            refresh();
+            return;
+          }
+          
+          // Direct number input
+          if (key && key.length === 1 && key >= "0" && key <= "9") {
+            const digit = parseInt(key);
+            const newVal = Math.min(max, digit * 10 + (digit < Math.floor(max / 10) ? 0 : 0));
+            if (newVal >= min && newVal <= max) {
+              fieldValues.set(currentField, String(newVal));
+              refresh();
+              return;
+            }
           }
         }
 

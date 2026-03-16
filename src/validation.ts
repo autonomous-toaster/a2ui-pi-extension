@@ -89,7 +89,7 @@ export function validateComponent(component: any): A2UIValidationResult {
 
   if (!component.component) {
     errors.push("Component missing required field: component");
-  } else if (!["Text", "Button", "TextField", "TextArea", "Checkbox", "RadioGroup", "SelectDropdown", "List", "Image", "Card", "Column", "Row"].includes(component.component)) {
+  } else if (!["Text", "Button", "TextField", "TextArea", "Slider", "Tabs", "Accordion", "Checkbox", "RadioGroup", "SelectDropdown", "List", "Image", "Card", "Column", "Row"].includes(component.component)) {
     errors.push(`Invalid component type: ${component.component}`);
   }
 
@@ -117,6 +117,24 @@ export function validateComponent(component: any): A2UIValidationResult {
         if (!validateDataPath(component.value.path)) {
           errors.push(`Invalid data path: ${component.value.path}`);
         }
+      }
+      break;
+    case "Slider":
+      if (component.min !== undefined && component.max !== undefined && component.min > component.max) {
+        errors.push("Slider: min cannot be greater than max");
+      }
+      if (component.step !== undefined && component.step <= 0) {
+        errors.push("Slider: step must be positive");
+      }
+      break;
+    case "Tabs":
+      if (!component.tabs || !Array.isArray(component.tabs) || component.tabs.length === 0) {
+        errors.push("Tabs component must have at least one tab");
+      }
+      break;
+    case "Accordion":
+      if (!component.sections || !Array.isArray(component.sections) || component.sections.length === 0) {
+        errors.push("Accordion component must have at least one section");
       }
       break;
     case "Checkbox":

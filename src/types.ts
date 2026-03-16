@@ -54,6 +54,40 @@ export interface TextAreaComponent extends A2UIComponent {
   };
 }
 
+export interface SliderComponent extends A2UIComponent {
+  component: "Slider";
+  label?: string;
+  value?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  attributes?: {
+    required?: boolean;
+    disabled?: boolean;
+  };
+}
+
+export interface TabsComponent extends A2UIComponent {
+  component: "Tabs";
+  tabs: Array<{
+    id: string;
+    label: string;
+    content?: string;
+  }>;
+  defaultTab?: string;
+}
+
+export interface AccordionComponent extends A2UIComponent {
+  component: "Accordion";
+  sections: Array<{
+    id: string;
+    title: string;
+    content: string;
+    expanded?: boolean;
+  }>;
+  allowMultiple?: boolean;
+}
+
 export interface CardComponent extends A2UIComponent {
   component: "Card";
   children?: string[]; // IDs of child components
