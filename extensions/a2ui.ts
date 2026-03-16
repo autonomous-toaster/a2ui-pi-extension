@@ -361,16 +361,16 @@ export default function (pi: ExtensionAPI) {
   pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
 
   // Hook: Parse and display A2UI from agent responses
-  pi.on("after_agent", async (event, ctx) => {
-    // Debug: log event structure
-    console.error("[A2UI] after_agent event keys:", Object.keys(event));
-    
-    if (!event.response && !event.text && !event.output) {
+  pi.on("message_end", async (event, ctx) => {
+    // Only handle assistant messages
+    if (!event.message || event.message.role !== "assistant" || !ctx.hasUI) {
       return;
     }
 
-    const responseText = event.response || event.text || event.output || "";
-    console.error("[A2UI] Response length:", responseText.length);
+    const message = event.message;
+    const responseText = typeof message.content === "string" ? message.content : "";
+    
+    console.error("[A2UI] message_end - response length:", responseText.length);
     
     // Try to parse A2UI from response
     const { a2uiMessages, parseError } = parseA2UIResponse(responseText);
@@ -401,17 +401,20 @@ export default function (pi: ExtensionAPI) {
     const componentFn = createA2UIFormComponent(components, ctx.ui.theme);
     const formData = await ctx.ui.custom(componentFn);
 
-    // If form was submitted, append the form data as a user message for the agent
+    // If form was submitted, add form data as a new user message
     if (formData) {
       ctx.ui.notify("Form submitted - sending data back to agent...", "info");
       
       // Add form data as new user message so agent can process it
       const formDataMessage = `[Form Response]\n${JSON.stringify(formData, null, 2)}`;
       
-      // This will be added to conversation history and agent will respond
-      return {
-        userMessage: formDataMessage,
-      };
+      // Programmatically submit this as a new user message
+      try {
+        await ctx.executeCommand("submit-user", formDataMessage);
+      } catch (e) {
+        // If executeCommand doesn't work, just notify
+        ctx.ui.notify("Form data: " + formDataMessage, "info");
+      }
     }
   });
 
