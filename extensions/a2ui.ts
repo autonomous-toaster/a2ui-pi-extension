@@ -389,65 +389,18 @@ export default function (pi: ExtensionAPI) {
     handler: async (args, ctx) => {
       const demoType = args.trim() || "form";
       console.error(`[A2UI] /a2ui-demo ${demoType} handler called`);
-      
-      if (demoType === "overlay") {
-        // Special handling for overlay
-        if (!ctx.hasUI) {
-          ctx.ui.notify("Error: UI not available", "error");
-          return;
-        }
-
-        const mockA2UI = getPhase2ASurveyExample();
-        const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
-        if (!a2uiMessages.length) {
-          ctx.ui.notify(`Parse error: ${parseError}`, "error");
-          return;
-        }
-
-        const validation = validateA2UIMessages(a2uiMessages);
-        if (!validation.valid) {
-          ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
-          return;
-        }
-
-        const components = extractComponents(a2uiMessages);
-        if (!components.size) {
-          ctx.ui.notify("No components extracted", "error");
-          return;
-        }
-
-        const componentFn = createA2UIOverlayManager(components, ctx.ui.theme, (data) => {
-          if (data) {
-            const entries = Object.entries(data).length;
-            ctx.ui.notify(`Overlay form submitted with ${entries} fields`, "info");
-          }
-        });
-
-        await ctx.ui.custom(componentFn, {
-          overlay: true,
-          overlayOptions: {
-            width: "80%",
-            maxHeight: "85%",
-            anchor: "center",
-            margin: { top: 2 },
-          },
-        });
-
-        ctx.ui.notify("Overlay demo closed. Use /a2ui-demo overlay to reopen.", "info");
-        return;
-      }
 
       const demo = demoExamples[demoType];
       if (!demo) {
-        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, textarea, slider, tabs, accordion, toggle, numberinput, rating, combobox, datepicker, card, survey, settings, products, profile, team, showcase, dashboard, article, overlay`, "error");
+        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, textarea, slider, tabs, accordion, toggle, numberinput, rating, combobox, datepicker, card, survey, settings, products, profile, team, showcase, dashboard, article`, "error");
         return;
       }
 
       console.error(`[A2UI] Running demo: ${demo.name}`);
-      await runDemoForm(demo.name, demo.example, ctx, false);
+      await runDemoForm(demo.name, demo.example, ctx, true); // All demos in overlay
     },
   });
 
   console.error("[A2UI Extension] Registered /a2ui-demo command");
-  console.error("[A2UI Extension] Usage: /a2ui-demo [form|survey|settings|products|profile|team|showcase|dashboard|article|overlay]");
+  console.error("[A2UI Extension] Usage: /a2ui-demo [form|textarea|slider|tabs|accordion|toggle|numberinput|rating|combobox|datepicker|card|survey|settings|products|profile|team|showcase|dashboard|article]");
 }
