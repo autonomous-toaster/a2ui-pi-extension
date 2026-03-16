@@ -650,7 +650,6 @@ export function createA2UIFormComponent(
       const currentField = fieldIds[focusedButtonIndex === -1 ? focusedFieldIndex : -1];
       if (currentField) {
         const comp = components.get(currentField)!;
-        console.error("[A2UI Combobox Debug] currentField:", currentField, "component:", comp.component, "input key:", JSON.stringify(key));
 
         if (comp.component === "TextField" || comp.component === "TextArea") {
           // Handle backspace
