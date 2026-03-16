@@ -1,5 +1,7 @@
 # a2ui-pi-extension
 
+> ⚠️ **EXPERIMENTAL** - This project is in active development. APIs and features may change. Phase 2A MVP is production-ready; Phase 2B+ are under development.
+
 A [pi-coding-agent](https://github.com/badlogic/pi-mono) extension that enables agents to generate interactive user interfaces using the [A2UI protocol](https://a2ui.org/).
 
 ## What is A2UI?
@@ -24,16 +26,42 @@ This extension provides:
 
 ## Supported Components
 
-The extension currently supports 5 core A2UI components (more coming in Phase 2):
+### Phase 1: Core (Complete ✅)
 
-| Component | Purpose | Example |
-|-----------|---------|---------|
-| **Text** | Display text content | Labels, headings, descriptions |
-| **Button** | Clickable actions | Submit, Cancel, Actions |
-| **TextField** | Text input with data binding | Forms, search, input fields |
-| **Card** | Grouped content container | Card layouts, panels |
-| **Column** | Vertical layout | Stacked items |
-| **Row** | Horizontal layout | Side-by-side items |
+| Component | Purpose | Status |
+|-----------|---------|--------|
+| **Text** | Display text content | ✅ Complete |
+| **Button** | Clickable actions | ✅ Complete |
+| **TextField** | Text input fields | ✅ Complete |
+
+### Phase 2A: MVP (Complete ✅)
+
+| Component | Purpose | Status |
+|-----------|---------|--------|
+| **Checkbox** | Boolean toggle (☑/☐) | ✅ Complete |
+| **RadioGroup** | Single selection (◉/○) | ✅ Complete |
+| **SelectDropdown** | Searchable dropdown (▼) | ✅ Complete |
+| **List** | Scrollable selectable list (▶) | ✅ Complete |
+| **Image** | Display images (📷) | ✅ Complete (placeholder MVP) |
+
+### Phase 2B: Extended (In Development 🚧)
+
+| Component | Purpose | Status |
+|-----------|---------|--------|
+| **TextArea** | Multi-line text input | 🚧 Planned |
+| **Slider** | Range input / number control | 🚧 Planned |
+| **Card** | Grouped content container | 🚧 Planned |
+| **Tabs** | Tab navigation | 🚧 Planned |
+| **Accordion** | Collapsible sections | 🚧 Planned |
+
+### Phase 2C+: Advanced (Planned 📋)
+
+- Modal / Dialog
+- DateInput / DateRangePicker
+- Rating / Stars
+- Progress Bar
+- Badge / Tag
+- And more...
 
 ## Installation
 
@@ -77,23 +105,33 @@ The tool generates the A2UI JSON and renders it:
 [ Registration Form UI will render here ]
 ```
 
-### Examples: View Pre-built UIs
+### Examples: Test Interactive Forms
 
-The extension includes a built-in tool to view and render pre-built example UIs:
+The extension includes test commands to demonstrate Phase 2A components:
 
 ```bash
-# List all available examples
-/a2ui_examples
+# Phase 1: Basic form with text inputs
+/a2ui-form
 
-# Render a specific example
-/a2ui_examples contact_form      # Contact form with name, email, message
-/a2ui_examples product_list      # Product cards with add-to-cart buttons
-/a2ui_examples dashboard         # Dashboard with stats cards
-/a2ui_examples login_form        # Login form with username/password
-/a2ui_examples settings_panel    # Settings with editable fields
+# Phase 2A: Full survey with all 5 MVP components
+/a2ui-survey          # Image + RadioGroup + Checkboxes + SelectDropdown + List
+
+# Phase 2A: Settings form
+/a2ui-settings        # Checkboxes + SelectDropdown + RadioGroup
+
+# Phase 2A: Product selection
+/a2ui-products        # List + RadioGroup + Checkboxes
 ```
 
-Each example renders instantly in the terminal and demonstrates real component usage patterns.
+Each command renders an interactive form with full keyboard navigation:
+
+| Key | Action |
+|-----|--------|
+| ↑↓ / Tab | Navigate between fields/items |
+| Space | Toggle Checkbox, expand SelectDropdown |
+| Enter | Select item, confirm and move next |
+| Backspace | Delete text, clear search |
+| Escape | Cancel form |
 
 ### Configuration Commands
 
@@ -259,42 +297,54 @@ Terminal Display
 - `a2ui-schema.json` - A2UI v0.9 component schema (reference)
 - `package.json` - Dependencies and extension metadata
 
-## Phase 2+ Roadmap
+## Status & Roadmap
 
-### Phase 2: Full Catalog (4-6 weeks)
-- [ ] List, CheckBox, Slider, DateTimeInput components
-- [ ] Modal and Tabs support
-- [ ] Multi-turn action handling (user clicks → agent responds)
-- [ ] Dynamic data updates via updateDataModel
+### Current Status: Phase 2A MVP Complete ✅
 
-### Phase 3: Core Integration (6-8 weeks)
-- [ ] Move from extension to pi core
-- [ ] RPC protocol layer for remote A2UI rendering
-- [ ] SDK integration for headless agents
+**Phase 1** (Text, Button, TextField) — Production ready ✅
+**Phase 2A** (Checkbox, RadioGroup, SelectDropdown, List, Image) — Production ready ✅
+**Phase 2B** (TextArea, Slider, Card, Tabs, Accordion) — Starting soon 🚧
+**Phase 3** (Agent actions, multi-turn) — Planned 📋
+
+### Phase Timeline
+
+**Week 1-2: Phase 2B MVP**
+- [ ] TextArea (multi-line input)
+- [ ] Slider (range control)
+- [ ] Integration testing
+
+**Week 3-4: Phase 2B Extended**
+- [ ] Card with Image (containers)
+- [ ] Tabs (tab navigation)
+- [ ] Accordion (collapsible sections)
+
+**Week 5-6: Polish & Phase 3 Planning**
 - [ ] Performance optimization
+- [ ] User testing & feedback
+- [ ] Plan Phase 3 (agent actions)
 
-### Phase 4: Advanced Features (6-8 weeks)
-- [ ] Custom component catalogs
-- [ ] Theming and styling
-- [ ] Advanced layout controls
-- [ ] State persistence
+See [DEVELOPMENT.md](./DEVELOPMENT.md) for detailed implementation notes.
 
-### Phase 5: SDK Mode (Optional)
-- [ ] Pi as first-class A2UI client (like Lit/Angular renderers)
-- [ ] Full A2UI protocol compliance
-- [ ] Browser/headless integration
+## Known Limitations
 
-## Limitations
+### Phase 1/2A (Experimental)
 
-Current limitations (Phase 1):
+- **Phase 2B not started** - TextArea, Slider, Tabs, Accordion coming next
+- **Image rendering** - Using placeholder MVP (text-based); actual image rendering planned for Phase 2B+
+- **No agent actions** - Button clicks don't trigger agent responses yet (Phase 3)
+- **Terminal only** - ANSI output; no browser/web rendering
+- **Single surface** - One form per session (for now)
+- **No state persistence** - Data lost when form closes
 
-- **5 components only** - Text, Button, TextField, Card, Column, Row
-- **No modals/overlays** - Modal and Tabs not yet supported
-- **Limited interactivity** - Button clicks echo only; no multi-turn actions yet
-- **Terminal rendering** - ANSI output; no browser rendering
-- **Linear layouts** - Row/Column are simplified; true flexbox not available
-- **No images/media** - Image, Video, AudioPlayer not supported
-- **Single surface** - Only one surface per agent session (for now)
+### Known Issues
+
+- SelectDropdown filtering: Type filters options but ↑/↓ navigate fields (not expanded list items)
+- List keyboard jump: Type first letter doesn't jump to item yet
+- Limited error messages: Some validation errors could be more helpful
+
+### Roadmap
+
+See [DEVELOPMENT.md](./DEVELOPMENT.md) for detailed Phase 2B+ roadmap and implementation timeline.
 
 ## Testing
 
