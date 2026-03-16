@@ -80,8 +80,12 @@ async function runDemoForm(
 }
 
 export default function (pi: ExtensionAPI) {
-  // Inject A2UI schema into system prompt
-  pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
+  // NOTE: A2UI schema injection is disabled for demos
+  // The demos use mocked A2UI data via /a2ui-demo commands
+  // When you want LLM to generate A2UI, use: pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
+  
+  // DISABLED FOR DEMO MODE:
+  // pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
 
   // === BASE FORM (Non-overlay for testing) ===
   pi.registerCommand("a2ui-demo form", {

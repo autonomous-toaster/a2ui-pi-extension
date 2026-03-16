@@ -243,3 +243,43 @@ extensions/
 | Ctrl+A | TextArea | Select all |
 | Escape | Form | Cancel |
 | Ctrl+U | Overlay (new) | Toggle visibility |
+
+---
+
+## IMPORTANT: Demo Mode vs LLM Mode
+
+### Current: Demo Mode (LLM Injection DISABLED)
+
+The extension runs in **demo mode** where:
+- `/a2ui-demo *` commands use mocked A2UI JSON
+- Agent conversations do NOT receive A2UI schema
+- No LLM calls to generate UIs
+- Perfect for component testing and UI development
+
+### Future: LLM Mode (Enable Schema Injection)
+
+When ready for LLM integration, enable in `extensions/a2ui.ts`:
+```typescript
+pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
+```
+
+Then:
+- Agent receives A2UI schema in system prompt
+- User can request: "build a form"
+- LLM generates A2UI JSON
+- Form rendered with `/a2ui-demo` infrastructure
+
+### Why Two Modes
+
+**Demo Mode** (current):
+- Fast (no network latency)
+- Reliable (no API timeouts)
+- Testable (no credentials needed)
+- Offline capable
+- Perfect for CI/CD
+
+**LLM Mode** (future):
+- Dynamic UI generation
+- Agent-driven interfaces
+- Real user interaction
+- Requires LLM API access

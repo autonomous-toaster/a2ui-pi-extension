@@ -1,10 +1,34 @@
 # Demo Configuration Verification
 
-## Status: ✅ ALL DEMOS USE MOCKED DATA
+## Status: ✅ ALL DEMOS USE MOCKED DATA (NO LLM INJECTION)
 
-### Demo Commands Verified
+### Important: LLM Schema Injection is DISABLED
 
-All demo commands use **pure mock A2UI JSON** - NO actual LLM calls:
+The extension has **disabled** the A2UI schema injection for agent conversations. This means:
+
+**Demos (Current)**:
+- All `/a2ui-demo *` commands use pure mocked A2UI JSON
+- No schema injection into agent prompts
+- No LLM calls to generate UIs
+- Fast, reliable rendering tests
+
+**Future LLM Integration**:
+- When you want the agent to generate A2UI forms
+- Enable schema injection with:
+  ```typescript
+  pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
+  ```
+- Then the LLM will receive A2UI schema in system prompt
+- And agent can request: "build a form with..." → LLM generates A2UI JSON
+
+### Why Disabled
+
+The demos are for **testing component rendering**, not for LLM integration. Keeping schema injection disabled ensures:
+- ✅ Demos don't trigger LLM calls
+- ✅ No API credentials needed
+- ✅ Fast instant rendering
+- ✅ Works offline
+- ✅ Perfect for CI/CD testing
 
 #### Phase 1
 - **`/a2ui-demo form`** 
