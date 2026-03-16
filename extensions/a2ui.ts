@@ -15,16 +15,16 @@ import { Text } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 import { StringEnum } from "@mariozechner/pi-ai";
 
-import type { A2UIServerMessage, A2UISurface, A2UIRendererState } from "./src/types";
+import type { A2UIServerMessage, A2UISurface, A2UIRendererState } from "../src/types";
 import {
   createA2UIBeforeAgentStartHandler,
   generateErrorFeedback,
   injectA2UISchema,
   shouldUseA2UI,
-} from "./src/prompting";
-import { parseA2UIResponse, extractSurfaceId, extractComponents, extractDataModel } from "./src/parser";
-import { validateA2UIMessages, validateComponentReferences } from "./src/validation";
-import { a2uiToTUI, renderA2UISurface, type ComponentRenderContext } from "./src/adapter";
+} from "../src/prompting";
+import { parseA2UIResponse, extractSurfaceId, extractComponents, extractDataModel } from "../src/parser";
+import { validateA2UIMessages, validateComponentReferences } from "../src/validation";
+import { a2uiToTUI, renderA2UISurface, type ComponentRenderContext } from "../src/adapter";
 
 // ===== Extension State =====
 
