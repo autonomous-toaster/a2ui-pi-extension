@@ -84,7 +84,7 @@ export default function (pi: ExtensionAPI) {
   pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
 
   // === BASE FORM (Non-overlay for testing) ===
-  pi.registerCommand("a2ui-demo|form", {
+  pi.registerCommand("a2ui-demo form", {
     description: "Test interactive A2UI form (Phase 1) - basic contact form",
     handler: async (_args, ctx) => {
       const mockA2UI = `
@@ -111,21 +111,21 @@ export default function (pi: ExtensionAPI) {
   });
 
   // === PHASE 2A DEMOS ===
-  pi.registerCommand("a2ui-demo|survey", {
+  pi.registerCommand("a2ui-demo survey", {
     description: "Phase 2A: Product Survey (all component types)",
     handler: async (_args, ctx) => {
       return runDemoForm("Product Survey", getPhase2ASurveyExample(), ctx, false);
     },
   });
 
-  pi.registerCommand("a2ui-demo|settings", {
+  pi.registerCommand("a2ui-demo settings", {
     description: "Phase 2A: Settings form (checkboxes, select, radio)",
     handler: async (_args, ctx) => {
       return runDemoForm("Settings", getPhase2ASettingsExample(), ctx, false);
     },
   });
 
-  pi.registerCommand("a2ui-demo|products", {
+  pi.registerCommand("a2ui-demo products", {
     description: "Phase 2A: Product list (list, radio, checkbox)",
     handler: async (_args, ctx) => {
       return runDemoForm("Product List", getPhase2AProductListExample(), ctx, false);
@@ -133,35 +133,35 @@ export default function (pi: ExtensionAPI) {
   });
 
   // === PHASE 2B+ DEMOS (Image support) ===
-  pi.registerCommand("a2ui-demo|profile", {
+  pi.registerCommand("a2ui-demo profile", {
     description: "Phase 2B+: Profile card with avatar image",
     handler: async (_args, ctx) => {
       return runDemoForm("Profile Card", getProfileCardExample(), ctx, false);
     },
   });
 
-  pi.registerCommand("a2ui-demo|team", {
+  pi.registerCommand("a2ui-demo team", {
     description: "Phase 2B+: Team selection with member avatars",
     handler: async (_args, ctx) => {
       return runDemoForm("Team Selection", getTeamSelectionExample(), ctx, false);
     },
   });
 
-  pi.registerCommand("a2ui-demo|showcase", {
+  pi.registerCommand("a2ui-demo showcase", {
     description: "Phase 2B+: Product showcase with image (e-commerce)",
     handler: async (_args, ctx) => {
       return runDemoForm("Product Showcase", getProductShowcaseExample(), ctx, false);
     },
   });
 
-  pi.registerCommand("a2ui-demo|dashboard", {
+  pi.registerCommand("a2ui-demo dashboard", {
     description: "Phase 2B+: User dashboard with profile image",
     handler: async (_args, ctx) => {
       return runDemoForm("Dashboard", getDashboardExample(), ctx, false);
     },
   });
 
-  pi.registerCommand("a2ui-demo|article", {
+  pi.registerCommand("a2ui-demo article", {
     description: "Phase 2B+: Article with featured image and feedback",
     handler: async (_args, ctx) => {
       return runDemoForm("Article", getArticleExample(), ctx, false);

@@ -26,22 +26,22 @@ await ctx.ui.custom(manager, {
 
 ### 2. Command Organization ✅
 Refactored `extensions/a2ui.ts` (405 → ~300 LOC):
-- **New prefix**: All demos under `/a2ui-demo|*`
+- **New prefix**: All demos under `/a2ui-demo *`
 - **Shared logic**: Created `runDemoForm()` helper
 - **Eliminated duplicates**: 6 identical command handlers → 1 utility
 - **New overlay demo**: `/a2ui-overlay` command
 
 Commands:
 ```
-/a2ui-demo|form         Phase 1: Basic form
-/a2ui-demo|survey       Phase 2A: All components
-/a2ui-demo|settings     Phase 2A: Settings
-/a2ui-demo|products     Phase 2A: Product list
-/a2ui-demo|profile      Phase 2B: Avatar image
-/a2ui-demo|team         Phase 2B: Multiple avatars
-/a2ui-demo|showcase     Phase 2B: Product showcase
-/a2ui-demo|dashboard    Phase 2B: Dashboard
-/a2ui-demo|article      Phase 2B: Article
+/a2ui-demo form         Phase 1: Basic form
+/a2ui-demo survey       Phase 2A: All components
+/a2ui-demo settings     Phase 2A: Settings
+/a2ui-demo products     Phase 2A: Product list
+/a2ui-demo profile      Phase 2B: Avatar image
+/a2ui-demo team         Phase 2B: Multiple avatars
+/a2ui-demo showcase     Phase 2B: Product showcase
+/a2ui-demo dashboard    Phase 2B: Dashboard
+/a2ui-demo article      Phase 2B: Article
 /a2ui-overlay          Overlay demo (Ctrl+U toggle)
 ```
 
@@ -62,7 +62,7 @@ Created `COMPONENTS_ANALYSIS.md` (300+ LOC) documenting:
 | Documented components | 0 | 11 |
 | Missing components identified | 0 | 4 |
 | Overlay support | ❌ | ✅ |
-| Command discoverability | ❌ | ✅ (/a2ui-demo|*) |
+| Command discoverability | ❌ | ✅ (/a2ui-demo *) |
 
 ## 🔧 Technical Details
 
@@ -83,7 +83,7 @@ Created `COMPONENTS_ANALYSIS.md` (300+ LOC) documenting:
 
 1. **LLM Integration** - Forms can now be displayed as persistent overlays
 2. **Phase 2B Implementation** - TextArea, Slider, Tabs, Accordion (~500 LOC, 1-2 weeks)
-3. **User Testing** - All commands accessible with `/a2ui-demo|` prefix
+3. **User Testing** - All commands accessible with `/a2ui-demo ` prefix
 4. **Component Expansion** - Clear patterns for adding new components
 
 ## 📋 Files Changed

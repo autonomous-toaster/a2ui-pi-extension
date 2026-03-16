@@ -93,7 +93,7 @@ export function createComponentName(...): () => (tui, theme, kb, done) => {
 1. **Image Rendering** (KNOWN BUG)
    - Kitty graphics protocol implementation incomplete
    - Base64 fallback not working properly
-   - Affects: a2ui-demo|profile, a2ui-demo|team, a2ui-demo|showcase, a2ui-demo|dashboard, a2ui-demo|article
+   - Affects: a2ui-demo profile, a2ui-demo team, a2ui-demo showcase, a2ui-demo dashboard, a2ui-demo article
    - Decision: Skip for now, focus on missing interactive components
 
 2. **Layout Components**
@@ -110,15 +110,15 @@ export function createComponentName(...): () => (tui, theme, kb, done) => {
 
 ### ✅ DONE
 1. Reorganize commands under `/a2ui-demo` prefix
-   - /a2ui-demo|form
-   - /a2ui-demo|survey
-   - /a2ui-demo|settings
-   - /a2ui-demo|products
-   - /a2ui-demo|profile
-   - /a2ui-demo|team
-   - /a2ui-demo|showcase
-   - /a2ui-demo|dashboard
-   - /a2ui-demo|article
+   - /a2ui-demo form
+   - /a2ui-demo survey
+   - /a2ui-demo settings
+   - /a2ui-demo products
+   - /a2ui-demo profile
+   - /a2ui-demo team
+   - /a2ui-demo showcase
+   - /a2ui-demo dashboard
+   - /a2ui-demo article
 
 2. Implement overlay display with Ctrl+U toggle
    - New: `/a2ui-overlay` command for demo
@@ -183,15 +183,15 @@ extensions/
 
 ### Command Organization
 ```bash
-/a2ui-demo|form         # Phase 1: Basic form
-/a2ui-demo|survey       # Phase 2A: All Phase 2A components
-/a2ui-demo|settings     # Phase 2A: Settings example
-/a2ui-demo|products     # Phase 2A: Product list
-/a2ui-demo|profile      # Phase 2B: Avatar image
-/a2ui-demo|team         # Phase 2B: Multiple avatars
-/a2ui-demo|showcase     # Phase 2B: Product image
-/a2ui-demo|dashboard    # Phase 2B: Dashboard image
-/a2ui-demo|article      # Phase 2B: Article image
+/a2ui-demo form         # Phase 1: Basic form
+/a2ui-demo survey       # Phase 2A: All Phase 2A components
+/a2ui-demo settings     # Phase 2A: Settings example
+/a2ui-demo products     # Phase 2A: Product list
+/a2ui-demo profile      # Phase 2B: Avatar image
+/a2ui-demo team         # Phase 2B: Multiple avatars
+/a2ui-demo showcase     # Phase 2B: Product image
+/a2ui-demo dashboard    # Phase 2B: Dashboard image
+/a2ui-demo article      # Phase 2B: Article image
 ```
 
 ## Next Steps (Not in this session)
