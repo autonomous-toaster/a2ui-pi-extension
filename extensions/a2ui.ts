@@ -185,6 +185,32 @@ const demoExamples: Record<string, { name: string; example: string }> = {
   products: { name: "Product List", example: getPhase2AProductListExample() },
   profile: { name: "Profile Card", example: getProfileCardExample() },
   team: { name: "Team Selection", example: getTeamSelectionExample() },
+  accordion: {
+    name: "Accordion Demo",
+    example: `
+---a2ui_JSON---
+[
+  {"version": "v0.9", "createSurface": {"surfaceId": "accordion_form"}},
+  {"version": "v0.9", "updateComponents": {
+    "surfaceId": "accordion_form",
+    "components": [
+      {"id": "title_label", "component": "Text", "text": "FAQ - Use Space to toggle, arrow keys to navigate"},
+      {"id": "faq_accordion", "component": "Accordion", "sections": [
+        {"id": "general", "title": "General Questions", "content": "What is this product? How does it work? Visit us for more info.", "expanded": true},
+        {"id": "pricing", "title": "Pricing & Plans", "content": "We offer 3 plans: Starter, Pro, and Enterprise. Prices start at $9/month.", "expanded": false},
+        {"id": "support", "title": "Support & Contact", "content": "Email: support@example.com. Phone: 1-800-EXAMPLE.", "expanded": false},
+        {"id": "technical", "title": "Technical Details", "content": "Built with REST API and WebSocket. Cloud-based infrastructure.", "expanded": false}
+      ]},
+      {"id": "submit_btn", "component": "Button", "child": "submit_label"},
+      {"id": "submit_label", "component": "Text", "text": "Close"},
+      {"id": "cancel_btn", "component": "Button", "child": "cancel_label"},
+      {"id": "cancel_label", "component": "Text", "text": "Cancel"}
+    ]
+  }}
+]
+---a2ui_JSON---
+`,
+  },
   showcase: { name: "Product Showcase", example: getProductShowcaseExample() },
   dashboard: { name: "Dashboard", example: getDashboardExample() },
   article: { name: "Article", example: getArticleExample() },
@@ -262,7 +288,7 @@ export default function (pi: ExtensionAPI) {
 
       const demo = demoExamples[demoType];
       if (!demo) {
-        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, textarea, slider, tabs, survey, settings, products, profile, team, showcase, dashboard, article, overlay`, "error");
+        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, textarea, slider, tabs, accordion, survey, settings, products, profile, team, showcase, dashboard, article, overlay`, "error");
         return;
       }
 

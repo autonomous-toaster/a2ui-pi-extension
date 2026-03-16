@@ -14,6 +14,7 @@ import type {
   TextAreaComponent,
   SliderComponent,
   TabsComponent,
+  AccordionComponent,
   ButtonComponent, 
   TextComponent, 
   CheckboxComponent,
@@ -66,7 +67,7 @@ export function createA2UIFormComponent(
     // Scan for interactive components
     for (const [id, comp] of components) {
       const type = comp.component;
-      if (type === "TextField" || type === "TextArea" || type === "Slider" || type === "Tabs" || type === "Checkbox" || type === "RadioGroup" || 
+      if (type === "TextField" || type === "TextArea" || type === "Slider" || type === "Tabs" || type === "Accordion" || type === "Checkbox" || type === "RadioGroup" || 
           type === "SelectDropdown" || type === "List" || type === "Image") {
         fieldIds.push(id);
         if (type === "TextField" || type === "TextArea") {
@@ -77,6 +78,13 @@ export function createA2UIFormComponent(
           const tabs = comp as TabsComponent;
           const defaultTab = tabs.defaultTab || (tabs.tabs[0]?.id || "");
           fieldValues.set(id, defaultTab);
+        } else if (type === "Accordion") {
+          const accordion = comp as AccordionComponent;
+          const expanded: Record<string, boolean> = {};
+          for (const section of accordion.sections) {
+            expanded[section.id] = section.expanded || false;
+          }
+          fieldStates.set(id, { expanded, selectedIndex: 0 });
         } else if (type === "Checkbox") {
           fieldStates.set(id, (comp as CheckboxComponent).checked || false);
         } else if (type === "RadioGroup") {
@@ -231,6 +239,27 @@ export function createA2UIFormComponent(
               add("  " + line);
             }
             add("  " + theme.fg("dim", "─".repeat(40)));
+          }
+          add("");
+        } else if (comp.component === "Accordion") {
+          const accordion = comp as AccordionComponent;
+          const state = fieldStates.get(fieldId) || { expanded: {}, selectedIndex: 0 };
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          
+          add(prefix + theme.fg("text", "Sections:"));
+          
+          for (const section of accordion.sections) {
+            const isExpanded = state.expanded[section.id] || false;
+            const symbol = isExpanded ? "▼" : "▶";
+            const sectionLine = `  ${symbol} ${section.title}`;
+            add(sectionLine);
+            
+            if (isExpanded) {
+              const contentLines = section.content.split("\n");
+              for (const line of contentLines) {
+                add("    " + line);
+              }
+            }
           }
           add("");
         } else if (comp.component === "Checkbox") {
@@ -396,6 +425,9 @@ export function createA2UIFormComponent(
                 data[fieldId] = fieldValues.get(fieldId) || "0";
               } else if (comp.component === "Tabs") {
                 data[fieldId] = fieldValues.get(fieldId) || "";
+              } else if (comp.component === "Accordion") {
+                const state = fieldStates.get(fieldId) || { expanded: {}, selectedIndex: 0 };
+                data[fieldId] = JSON.stringify(state.expanded);
               } else if (comp.component === "Checkbox") {
                 data[fieldId] = String(fieldStates.get(fieldId) || false);
               } else if (comp.component === "RadioGroup" || comp.component === "SelectDropdown" || comp.component === "List") {
@@ -548,6 +580,35 @@ export function createA2UIFormComponent(
           if (matchesKey(key, Key.right)) {
             const newIndex = (currentIndex + 1) % tabs.tabs.length;
             fieldValues.set(currentField, tabs.tabs[newIndex].id);
+            refresh();
+            return;
+          }
+        }
+
+        if (comp.component === "Accordion") {
+          const accordion = comp as AccordionComponent;
+          const state = fieldStates.get(currentField) || { expanded: {}, selectedIndex: 0 };
+          
+          // Space: Toggle current section
+          if (matchesKey(key, Key.space)) {
+            const currentSection = accordion.sections[state.selectedIndex];
+            if (currentSection) {
+              state.expanded[currentSection.id] = !state.expanded[currentSection.id];
+            }
+            refresh();
+            return;
+          }
+          
+          // Down arrow: Move to next section
+          if (matchesKey(key, Key.down)) {
+            state.selectedIndex = Math.min(state.selectedIndex + 1, accordion.sections.length - 1);
+            refresh();
+            return;
+          }
+          
+          // Up arrow: Move to previous section
+          if (matchesKey(key, Key.up)) {
+            state.selectedIndex = Math.max(state.selectedIndex - 1, 0);
             refresh();
             return;
           }
