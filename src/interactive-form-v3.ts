@@ -282,7 +282,10 @@ export function createA2UIFormComponent(
     }
 
     // === INPUT HANDLING ===
-    function handleInput(key: Key) {
+    function handleInput(data: string) {
+      if (!data) return;
+      
+      const key = data;
       const focusedComp = focusedButtonIndex === -1 ? components.get(fieldIds[focusedFieldIndex]) : null;
       const isList = focusedComp?.component === "List";
       const isRadioGroup = focusedComp?.component === "RadioGroup";
@@ -295,7 +298,7 @@ export function createA2UIFormComponent(
       }
 
       if (matchesKey(key, Key.Tab)) {
-        if (matchesKey(key, Key.ShiftTab) || key.shift) {
+        if (matchesKey(key, Key.ShiftTab) || key.includes("shift")) {
           // Shift+Tab: previous field
           focusedButtonIndex = -1;
           focusedFieldIndex = (focusedFieldIndex - 1 + fieldIds.length) % fieldIds.length;
@@ -399,17 +402,23 @@ export function createA2UIFormComponent(
 
         if (comp.component === "TextField") {
           // Handle backspace
-          if (matchesKey(key, Key.Backspace) || key.charCode === 8 || key.charCode === 127) {
+          const isBackspace = 
+            matchesKey(key, Key.Backspace) || 
+            key === '\x08' ||     // ASCII 8
+            key === '\x7f' ||     // ASCII 127 (DEL)
+            key === '\u0008';     // Unicode backspace
+          
+          if (isBackspace) {
             const current = fieldValues.get(currentField) || "";
             fieldValues.set(currentField, current.slice(0, -1));
             refresh();
             return;
           }
 
-          // Handle character input
-          if (key.charCode && key.charCode >= 32 && key.charCode < 127) {
+          // Handle character input (single printable character)
+          if (key && key.length === 1 && key.charCodeAt(0) >= 32 && key.charCodeAt(0) < 127) {
             const current = fieldValues.get(currentField) || "";
-            fieldValues.set(currentField, current + String.fromCharCode(key.charCode));
+            fieldValues.set(currentField, current + key);
             refresh();
             return;
           }
@@ -489,7 +498,7 @@ export function createA2UIFormComponent(
     // === COMPONENT INTERFACE ===
     return {
       render: (width: number) => render(width),
-      handleInput: (key: Key) => handleInput(key),
+      handleInput: (key: string) => handleInput(key),
       getStatus: () => "Interactive Form",
     };
   };
