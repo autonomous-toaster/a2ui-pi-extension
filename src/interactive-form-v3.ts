@@ -13,6 +13,7 @@ import type {
   TextFieldComponent,
   TextAreaComponent,
   SliderComponent,
+  TabsComponent,
   ButtonComponent, 
   TextComponent, 
   CheckboxComponent,
@@ -65,13 +66,17 @@ export function createA2UIFormComponent(
     // Scan for interactive components
     for (const [id, comp] of components) {
       const type = comp.component;
-      if (type === "TextField" || type === "TextArea" || type === "Slider" || type === "Checkbox" || type === "RadioGroup" || 
+      if (type === "TextField" || type === "TextArea" || type === "Slider" || type === "Tabs" || type === "Checkbox" || type === "RadioGroup" || 
           type === "SelectDropdown" || type === "List" || type === "Image") {
         fieldIds.push(id);
         if (type === "TextField" || type === "TextArea") {
           fieldValues.set(id, (comp as TextFieldComponent | TextAreaComponent).value || "");
         } else if (type === "Slider") {
           fieldValues.set(id, String((comp as SliderComponent).value || (comp as SliderComponent).min || 0));
+        } else if (type === "Tabs") {
+          const tabs = comp as TabsComponent;
+          const defaultTab = tabs.defaultTab || (tabs.tabs[0]?.id || "");
+          fieldValues.set(id, defaultTab);
         } else if (type === "Checkbox") {
           fieldStates.set(id, (comp as CheckboxComponent).checked || false);
         } else if (type === "RadioGroup") {
@@ -197,6 +202,36 @@ export function createA2UIFormComponent(
           
           add(prefix + theme.fg("text", label + ":"));
           add("  " + theme.fg("accent", bar) + ` ${currentVal}/${max}`);
+          add("");
+        } else if (comp.component === "Tabs") {
+          const tabs = comp as TabsComponent;
+          const selectedTab = fieldValues.get(fieldId) || tabs.defaultTab || tabs.tabs[0]?.id || "";
+          const prefix = isFocused ? theme.fg("success", "> ") : "  ";
+          
+          // Render tab headers
+          let tabBar = "";
+          for (const tab of tabs.tabs) {
+            if (tab.id === selectedTab) {
+              tabBar += theme.fg("accent", `[ ${tab.label} ]`);
+            } else {
+              tabBar += `[ ${tab.label} ]`;
+            }
+            tabBar += " ";
+          }
+          
+          add(prefix + theme.fg("text", "Tabs:"));
+          add("  " + tabBar);
+          
+          // Render selected tab content
+          const selectedTabObj = tabs.tabs.find(t => t.id === selectedTab);
+          if (selectedTabObj?.content) {
+            add("  " + theme.fg("dim", "─".repeat(40)));
+            const contentLines = selectedTabObj.content.split("\n");
+            for (const line of contentLines) {
+              add("  " + line);
+            }
+            add("  " + theme.fg("dim", "─".repeat(40)));
+          }
           add("");
         } else if (comp.component === "Checkbox") {
           const cb = comp as CheckboxComponent;
@@ -359,6 +394,8 @@ export function createA2UIFormComponent(
                 data[fieldId] = fieldValues.get(fieldId) || "";
               } else if (comp.component === "Slider") {
                 data[fieldId] = fieldValues.get(fieldId) || "0";
+              } else if (comp.component === "Tabs") {
+                data[fieldId] = fieldValues.get(fieldId) || "";
               } else if (comp.component === "Checkbox") {
                 data[fieldId] = String(fieldStates.get(fieldId) || false);
               } else if (comp.component === "RadioGroup" || comp.component === "SelectDropdown" || comp.component === "List") {
@@ -493,6 +530,26 @@ export function createA2UIFormComponent(
               refresh();
               return;
             }
+          }
+        }
+
+        if (comp.component === "Tabs") {
+          const tabs = comp as TabsComponent;
+          const currentTabId = fieldValues.get(currentField) || tabs.defaultTab || tabs.tabs[0]?.id || "";
+          const currentIndex = tabs.tabs.findIndex(t => t.id === currentTabId);
+          
+          if (matchesKey(key, Key.left)) {
+            const newIndex = (currentIndex - 1 + tabs.tabs.length) % tabs.tabs.length;
+            fieldValues.set(currentField, tabs.tabs[newIndex].id);
+            refresh();
+            return;
+          }
+          
+          if (matchesKey(key, Key.right)) {
+            const newIndex = (currentIndex + 1) % tabs.tabs.length;
+            fieldValues.set(currentField, tabs.tabs[newIndex].id);
+            refresh();
+            return;
           }
         }
 

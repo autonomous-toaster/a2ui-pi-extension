@@ -154,6 +154,32 @@ const demoExamples: Record<string, { name: string; example: string }> = {
 ---a2ui_JSON---
 `,
   },
+  tabs: {
+    name: "Tabs Demo",
+    example: `
+---a2ui_JSON---
+[
+  {"version": "v0.9", "createSurface": {"surfaceId": "tabs_form"}},
+  {"version": "v0.9", "updateComponents": {
+    "surfaceId": "tabs_form",
+    "components": [
+      {"id": "title_label", "component": "Text", "text": "Documentation - Use arrow keys to switch tabs"},
+      {"id": "docs_tabs", "component": "Tabs", "defaultTab": "overview", "tabs": [
+        {"id": "overview", "label": "Overview", "content": "Welcome to the documentation.\nThis is a quick start guide to get you up and running.\nNavigate between tabs using arrow keys."},
+        {"id": "install", "label": "Installation", "content": "1. Install via npm: npm install package\n2. Import in your project\n3. Configure settings\n4. Start using in your code"},
+        {"id": "api", "label": "API Docs", "content": "Main methods:\n- connect(options)\n- disconnect()\n- on(event, callback)\n- emit(event, data)"},
+        {"id": "examples", "label": "Examples", "content": "// Basic usage\nconst app = new App();\napp.on('ready', () => {\n  console.log('App ready!');\n});"}
+      ]},
+      {"id": "submit_btn", "component": "Button", "child": "submit_label"},
+      {"id": "submit_label", "component": "Text", "text": "Done"},
+      {"id": "cancel_btn", "component": "Button", "child": "cancel_label"},
+      {"id": "cancel_label", "component": "Text", "text": "Close"}
+    ]
+  }}
+]
+---a2ui_JSON---
+`,
+  },
   survey: { name: "Product Survey", example: getPhase2ASurveyExample() },
   settings: { name: "Settings", example: getPhase2ASettingsExample() },
   products: { name: "Product List", example: getPhase2AProductListExample() },
@@ -182,26 +208,7 @@ export default function (pi: ExtensionAPI) {
 
   // === MAIN DEMO COMMAND ===
   pi.registerCommand("a2ui-demo", {
-    description: `A2UI Demo Showcase - Display interactive forms with A2UI components
-
-Available demos:
-  /a2ui-demo form         - Basic contact form with text fields
-  /a2ui-demo textarea     - TextArea demo (multi-line input)
-  /a2ui-demo slider       - Slider controls (volume, brightness, price, difficulty)
-  /a2ui-demo survey       - Product survey with all Phase 2A components
-  /a2ui-demo settings     - Settings form with checkboxes and radio buttons
-  /a2ui-demo products     - Product list with selection
-  /a2ui-demo profile      - Profile card with avatar image
-  /a2ui-demo team         - Team selection with member avatars
-  /a2ui-demo showcase     - Product showcase (e-commerce)
-  /a2ui-demo dashboard    - User dashboard with profile
-  /a2ui-demo article      - Article with featured image
-  /a2ui-demo overlay      - Overlay demo with Ctrl+U toggle
-
-Navigation:
-  Tab / Shift+Tab         - Move between fields
-  Enter / Space           - Select/interact with focused component
-  Escape                  - Close form without submitting`,
+    description: `/a2ui-demo [form|textarea|slider|survey|settings|products|profile|team|showcase|dashboard|article|overlay]`,
     handler: async (args, ctx) => {
       const demoType = args.trim() || "form";
       console.error(`[A2UI] /a2ui-demo ${demoType} handler called`);
@@ -255,7 +262,7 @@ Navigation:
 
       const demo = demoExamples[demoType];
       if (!demo) {
-        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, textarea, slider, survey, settings, products, profile, team, showcase, dashboard, article, overlay`, "error");
+        ctx.ui.notify(`Unknown demo type: ${demoType}. Available: form, textarea, slider, tabs, survey, settings, products, profile, team, showcase, dashboard, article, overlay`, "error");
         return;
       }
 
