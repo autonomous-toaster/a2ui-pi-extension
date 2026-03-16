@@ -358,7 +358,54 @@ export default function (pi: ExtensionAPI) {
   // When you want LLM to generate A2UI, use: pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
   
   // DISABLED FOR DEMO MODE:
-  // pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
+  pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
+
+  // Hook: Parse and display A2UI from agent responses
+  pi.on("after_agent", async (event, ctx) => {
+    if (!event.response || !ctx.hasUI) {
+      return;
+    }
+
+    const responseText = event.response;
+    
+    // Try to parse A2UI from response
+    const { a2uiMessages, parseError } = parseA2UIResponse(responseText);
+    if (!a2uiMessages.length) {
+      // No A2UI found, that's OK - just continue
+      return;
+    }
+
+    // Validate A2UI messages
+    const validation = validateA2UIMessages(a2uiMessages);
+    if (!validation.valid) {
+      ctx.ui.notify(`A2UI validation error: ${validation.errors[0]}`, "error");
+      return;
+    }
+
+    // Extract components
+    const components = extractComponents(a2uiMessages);
+    if (!components.size) {
+      // No components, skip
+      return;
+    }
+
+    // Display the form
+    const componentFn = createA2UIFormComponent(components, ctx.ui.theme);
+    const formData = await ctx.ui.custom(componentFn);
+
+    // If form was submitted, append the form data as a user message for the agent
+    if (formData) {
+      ctx.ui.notify("Form submitted - sending data back to agent...", "info");
+      
+      // Add form data as new user message so agent can process it
+      const formDataMessage = `[Form Response]\n${JSON.stringify(formData, null, 2)}`;
+      
+      // This will be added to conversation history and agent will respond
+      return {
+        userMessage: formDataMessage,
+      };
+    }
+  });
 
   // === MAIN DEMO COMMAND ===
   pi.registerCommand("a2ui-demo", {
