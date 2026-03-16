@@ -449,9 +449,12 @@ export default function (pi: ExtensionAPI) {
             details: {},
           };
         } else {
-          console.error("[A2UI Tool] Form cancelled by user");
+          console.error("[A2UI Tool] Form cancelled by user - not sending to LLM");
+          // When form is cancelled, return empty content
+          // This prevents the cancellation from being sent to the LLM
+          // User returns to chat without any tool result message
           return {
-            content: [{ type: "text", text: "User cancelled the form" }],
+            content: [{ type: "text", text: "" }],
             details: {},
           };
         }
