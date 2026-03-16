@@ -193,7 +193,7 @@ export function createA2UIFormComponent(
       }
 
       // Backspace - delete character from focused field
-      if (matchesKey(data, Key.backspace)) {
+      if (matchesKey(data, Key.backspace) || data === '\x08' || data === '\x7f') {
         if (focusedButtonIndex === -1) {
           const fieldId = fieldIds[focusedFieldIndex];
           if (fieldId) {
