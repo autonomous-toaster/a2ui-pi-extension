@@ -35,66 +35,67 @@ let persistentOverlayContent: Map<string, any> | null = null;
  * Ctrl+U toggles visibility, form submission hides (not closes)
  * Can be updated with new form content
  */
-function createPersistentA2UIOverlay(theme: any) {
+function createPersistentA2UIOverlay(theme: any, overlayRef: any) {
   let currentComponents: Map<string, any> | null = null;
   let innerComponent: any = null;
   let isVisible = false;
   let tui: any = null;
 
+  const componentInstance = {
+    render: (width: number): string[] => {
+      if (!isVisible || !innerComponent) return [];
+      return innerComponent.render(width);
+    },
+
+    handleInput: (data: string): void => {
+      // Ctrl+U toggles overlay visibility
+      if (matchesKey(data, "ctrl+u")) {
+        isVisible = !isVisible;
+        if (tui) tui.requestRender();
+        return;
+      }
+
+      // Pass input to form if visible
+      if (isVisible && innerComponent) {
+        innerComponent.handleInput(data);
+      }
+    },
+
+    invalidate: (): void => {
+      if (innerComponent?.invalidate) {
+        innerComponent.invalidate();
+      }
+    },
+
+    // Method to update the displayed form
+    updateForm: (components: Map<string, any>, theme: any, onSubmit?: (data: any) => void) => {
+      currentComponents = components;
+      isVisible = true;
+
+      // Create new inner form component
+      const formComponentFactory = createA2UIFormComponent(components, theme);
+      innerComponent = formComponentFactory(
+        tui,
+        theme,
+        null,
+        (formData) => {
+          if (onSubmit) onSubmit(formData);
+          // Hide overlay on form submission, don't close
+          isVisible = false;
+          if (tui) tui.requestRender();
+        }
+      );
+
+      if (tui) tui.requestRender();
+    },
+  };
+
   return (tuiInstance: any, _theme: any, _kb: any, done: (data: any) => void) => {
     tui = tuiInstance;
+    overlayRef.instance = componentInstance; // Store reference
     
     // Never call done - overlay is permanent
-    const neverDone = () => {};
-
-    return {
-      render: (width: number): string[] => {
-        if (!isVisible || !innerComponent) return [];
-        return innerComponent.render(width);
-      },
-
-      handleInput: (data: string): void => {
-        // Ctrl+U toggles overlay visibility
-        if (matchesKey(data, "ctrl+u")) {
-          isVisible = !isVisible;
-          if (tui) tui.requestRender();
-          return;
-        }
-
-        // Pass input to form if visible
-        if (isVisible && innerComponent) {
-          innerComponent.handleInput(data);
-        }
-      },
-
-      invalidate: (): void => {
-        if (innerComponent?.invalidate) {
-          innerComponent.invalidate();
-        }
-      },
-
-      // Method to update the displayed form
-      updateForm: (components: Map<string, any>, theme: any, onSubmit?: (data: any) => void) => {
-        currentComponents = components;
-        isVisible = true;
-
-        // Create new inner form component
-        const formComponentFactory = createA2UIFormComponent(components, theme);
-        innerComponent = formComponentFactory(
-          tui,
-          theme,
-          null,
-          (formData) => {
-            if (onSubmit) onSubmit(formData);
-            // Hide overlay on form submission, don't close
-            isVisible = false;
-            if (tui) tui.requestRender();
-          }
-        );
-
-        if (tui) tui.requestRender();
-      },
-    };
+    return componentInstance;
   };
 }
 
@@ -468,8 +469,8 @@ export default function (pi: ExtensionAPI) {
   // pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
 
   // Create persistent overlay component once
-  let persistentOverlayComponent: any = null;
-  let persistentOverlayUI: any = null;
+  let persistentOverlayFactory: any = null;
+  const overlayRef: any = { instance: null };
 
   // === MAIN DEMO COMMAND ===
   pi.registerCommand("a2ui-demo", {
@@ -487,9 +488,9 @@ export default function (pi: ExtensionAPI) {
       console.error(`[A2UI] Running demo: ${demo.name}`);
 
       // Initialize persistent overlay on first demo
-      if (!persistentOverlayComponent) {
-        persistentOverlayComponent = createPersistentA2UIOverlay(ctx.ui.theme);
-        const task = ctx.ui.custom(persistentOverlayComponent, {
+      if (!persistentOverlayFactory) {
+        persistentOverlayFactory = createPersistentA2UIOverlay(ctx.ui.theme, overlayRef);
+        const task = ctx.ui.custom(persistentOverlayFactory, {
           overlay: true,
           overlayOptions: {
             width: "80%",
@@ -500,10 +501,17 @@ export default function (pi: ExtensionAPI) {
         });
         // Don't await - let it run in background
         task.catch(() => {});
+        
+        // Wait a bit for initialization
+        await new Promise(r => setTimeout(r, 50));
       }
 
       // Update the persistent overlay with the new form
-      await runDemoForm(demo.name, demo.example, ctx, true, persistentOverlayComponent);
+      if (overlayRef.instance) {
+        await runDemoForm(demo.name, demo.example, ctx, true, overlayRef.instance);
+      } else {
+        ctx.ui.notify("Persistent overlay initializing, please try again", "info");
+      }
     },
   });
 
