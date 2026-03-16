@@ -9,9 +9,17 @@ import * as path from "node:path";
 // ===== Default System Prompt Injection =====
 
 const A2UI_SCHEMA_PROMPT = `
-# A2UI JSON Generation Guide
+# A2UI Forms - Display Interactive Interfaces to Users
 
-Generate A2UI JSON forms when user requests interactive UIs. Use delimiter \`---a2ui_JSON---\` to wrap JSON blocks.
+When user requests interactive forms, use the \`display_a2ui_form\` tool to show forms in the terminal.
+
+## How to Use display_a2ui_form Tool
+
+1. Generate A2UI JSON as a valid array of messages
+2. Convert to string: JSON.stringify(yourArray)
+3. Call tool with: {"a2ui_json": "[{...}]"}
+4. Tool displays form, user fills it, returns formData
+5. Use the formData in your response
 
 ## All Available Components (v0.9)
 
@@ -19,27 +27,9 @@ Generate A2UI JSON forms when user requests interactive UIs. Use delimiter \`---
 **Display**: Text, Button, Image  
 **Input**: TextField, TextArea, Checkbox, RadioGroup, SelectDropdown, Toggle, NumberInput, DatePicker, Rating, Combobox, Slider, Tabs, Accordion, List
 
-## When to Use Each Input Component
-
-- **TextField**: Single-line text input (names, emails, short answers)
-- **TextArea**: Multi-line text (long responses, descriptions)
-- **Checkbox**: Single yes/no option or multiple selections
-- **RadioGroup**: Choose ONE from several options
-- **SelectDropdown**: Choose from predefined list (dropdown)
-- **Combobox**: Search/filter through options + select
-- **Toggle**: On/off switch
-- **NumberInput**: Integer or decimal numbers
-- **Slider**: Choose number in range
-- **Rating**: 1-5 star rating
-- **DatePicker**: Date selection (YYYY-MM-DD format)
-- **Tabs**: Group content by tabs
-- **Accordion**: Collapsible sections
-- **List**: Display items with selection
-
 ## Form Structure Example
 
 \`\`\`json
----a2ui_JSON---
 [
   {"version": "v0.9", "createSurface": {"surfaceId": "form_id"}},
   {"version": "v0.9", "updateComponents": {"surfaceId": "form_id", "components": [
@@ -61,21 +51,39 @@ Generate A2UI JSON forms when user requests interactive UIs. Use delimiter \`---
 4. All component IDs must be unique within surface
 5. All messages have "version": "v0.9"
 6. Wrap in [ ] array format
-7. Use Column/Row/Card for layout, not just bare children
+7. Use Column/Row/Card for layout
 
-## Required Fields by Component
+## When to Use Each Input Component
 
-- **Text**: id, component, text
-- **Button**: id, component, child (points to Text component for label)
-- **TextField**: id, component, label, placeholder (optional)
-- **TextArea**: id, component, label, placeholder (optional)
-- **Checkbox**: id, component, label
-- **RadioGroup**: id, component, label, options (array of {label, value})
-- **SelectDropdown**: id, component, label, options (array of {label, value})
-- **Combobox**: id, component, label, options (array of {label, value})
-- **Column**: id, component, children (array of IDs)
-- **Row**: id, component, children (array of IDs)
-- **Card**: id, component, children (array of IDs)
+- **TextField**: Single-line text (names, emails, short answers)
+- **TextArea**: Multi-line text (long responses, descriptions)
+- **Checkbox**: Single yes/no or multiple selections
+- **RadioGroup**: Choose ONE from several options
+- **SelectDropdown**: Choose from list (dropdown)
+- **Combobox**: Search/filter options + select
+- **Toggle**: On/off switch
+- **NumberInput**: Integers or decimals
+- **Slider**: Choose number in range
+- **Rating**: 1-5 star rating
+- **DatePicker**: Date selection (YYYY-MM-DD)
+- **Tabs**: Group content by tabs
+- **Accordion**: Collapsible sections
+- **List**: Display items with selection
+
+## Example Tool Call
+
+After generating A2UI JSON, call:
+
+\`\`\`
+display_a2ui_form({"a2ui_json": "[{\"version\": \"v0.9\", \"createSurface\": {...}}]"})
+\`\`\`
+
+Tool returns:
+- \`{success: true, formData: {...}}\` - user submitted form
+- \`{success: false, cancelled: true}\` - user cancelled
+- \`{error: "message"}\` - validation or render error
+
+Then continue conversation with the collected data.
 `;
 
 // ===== Injection Functions =====

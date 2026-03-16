@@ -360,77 +360,68 @@ export default function (pi: ExtensionAPI) {
   // DISABLED FOR DEMO MODE:
   pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
 
-  // Hook: Parse and display A2UI from agent responses
-  pi.on("message_end", async (event, ctx) => {
-    // Only handle assistant messages
-    if (!event.message || event.message.role !== "assistant" || !ctx.hasUI) {
-      console.error("[A2UI] Skipping - no message, wrong role, or no UI");
-      return;
-    }
-
-    const message = event.message;
-    const responseText = typeof message.content === "string" ? message.content : "";
-    
-    console.error("[A2UI] message_end - content:", responseText.substring(0, 200));
-    console.error("[A2UI] message_end - response length:", responseText.length);
-    
-    // Try to parse A2UI from response
-    const { a2uiMessages, parseError } = parseA2UIResponse(responseText);
-    console.error("[A2UI] Parse result - messages:", a2uiMessages.length, "error:", parseError);
-    
-    if (!a2uiMessages.length) {
-      // No A2UI found, that's OK - just continue
-      console.error("[A2UI] No A2UI messages found");
-      return;
-    }
-
-    console.error("[A2UI] Found", a2uiMessages.length, "A2UI messages");
-
-    // Validate A2UI messages
-    const validation = validateA2UIMessages(a2uiMessages);
-    console.error("[A2UI] Validation:", validation.valid ? "PASS" : "FAIL", validation.errors);
-    
-    if (!validation.valid) {
-      ctx.ui.notify(`A2UI validation error: ${validation.errors[0]}`, "error");
-      return;
-    }
-
-    // Extract components
-    const components = extractComponents(a2uiMessages);
-    console.error("[A2UI] Extracted components:", components.size);
-    
-    if (!components.size) {
-      // No components, skip
-      console.error("[A2UI] No components extracted");
-      return;
-    }
-
-    console.error("[A2UI] Displaying form with", components.size, "components");
-
-    // Display the form
-    const componentFn = createA2UIFormComponent(components, ctx.ui.theme);
-    console.error("[A2UI] Created component function, calling ctx.ui.custom()");
-    
-    const formData = await ctx.ui.custom(componentFn);
-    
-    console.error("[A2UI] Form returned, data:", formData ? Object.keys(formData) : "null");
-
-    // If form was submitted, add form data as a new user message
-    if (formData) {
-      ctx.ui.notify("Form submitted - sending data back to agent...", "info");
+  // Register tool: display_a2ui_form
+  // LLM calls this tool with A2UI JSON to display forms
+  pi.registerTool("display_a2ui_form", {
+    description: "Display an interactive A2UI form to the user",
+    input: Type.Object({
+      a2ui_json: Type.String({
+        description: "A2UI JSON as a string (array of messages)",
+      }),
+    }),
+    handler: async (input, ctx) => {
+      console.error("[A2UI Tool] Received display_a2ui_form call");
       
-      // Add form data as new user message so agent can process it
-      const formDataMessage = `[Form Response]\n${JSON.stringify(formData, null, 2)}`;
+      const jsonStr = input.a2ui_json;
       
-      // Programmatically submit this as a new user message
       try {
-        await ctx.executeCommand("submit-user", formDataMessage);
-      } catch (e) {
-        // If executeCommand doesn't work, just notify
-        console.error("[A2UI] executeCommand error:", e);
-        ctx.ui.notify("Form data: " + formDataMessage, "info");
+        // Parse the JSON string
+        const a2uiMessages = JSON.parse(jsonStr) as A2UIServerMessage[];
+        console.error("[A2UI Tool] Parsed", a2uiMessages.length, "messages");
+
+        // Validate
+        const validation = validateA2UIMessages(a2uiMessages);
+        if (!validation.valid) {
+          return {
+            error: `Validation error: ${validation.errors.join(", ")}`,
+          };
+        }
+
+        // Extract components
+        const components = extractComponents(a2uiMessages);
+        if (!components.size) {
+          return {
+            error: "No components found in A2UI JSON",
+          };
+        }
+
+        console.error("[A2UI Tool] Displaying form with", components.size, "components");
+
+        // Display form
+        const componentFn = createA2UIFormComponent(components, ctx.ui.theme);
+        const formData = await ctx.ui.custom(componentFn);
+
+        if (formData) {
+          console.error("[A2UI Tool] Form submitted with data");
+          return {
+            success: true,
+            formData: formData,
+          };
+        } else {
+          console.error("[A2UI Tool] Form cancelled by user");
+          return {
+            success: false,
+            cancelled: true,
+          };
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("[A2UI Tool] Error:", message);
+        return {
+          error: `Failed to display form: ${message}`,
+        };
       }
-    }
+    },
   });
 
   // === MAIN DEMO COMMAND ===
