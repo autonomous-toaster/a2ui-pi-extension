@@ -80,7 +80,13 @@ async function runDemoForm(
 }
 
 export default function (pi: ExtensionAPI) {
-  console.log("[A2UI Extension] Loading - registering 10 demo commands");
+  console.error("[A2UI Extension] Loading - registering 10 demo commands");
+  console.error("[A2UI] imports:", {
+    parseA2UIResponse: typeof parseA2UIResponse,
+    validateA2UIMessages: typeof validateA2UIMessages,
+    extractComponents: typeof extractComponents,
+    createA2UIFormComponent: typeof createA2UIFormComponent,
+  });
   
   // NOTE: A2UI schema injection is disabled for demos
   // The demos use mocked A2UI data via /a2ui-demo commands
@@ -93,6 +99,7 @@ export default function (pi: ExtensionAPI) {
   pi.registerCommand("a2ui-demo form", {
     description: "Test interactive A2UI form (Phase 1) - basic contact form",
     handler: async (_args, ctx) => {
+      console.error("[A2UI] /a2ui-demo form handler called");
       const mockA2UI = `
 ---a2ui_JSON---
 [
@@ -112,7 +119,9 @@ export default function (pi: ExtensionAPI) {
 ]
 ---a2ui_JSON---
 `;
+      console.error("[A2UI] About to call runDemoForm");
       await runDemoForm("Contact Form", mockA2UI, ctx, false);
+      console.error("[A2UI] runDemoForm completed");
     },
   });
 
