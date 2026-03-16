@@ -25,6 +25,7 @@ import {
 import { parseA2UIResponse, extractSurfaceId, extractComponents, extractDataModel } from "../src/parser";
 import { validateA2UIMessages, validateComponentReferences } from "../src/validation";
 import { a2uiToTUI, renderA2UISurface, type ComponentRenderContext } from "../src/adapter";
+import { listExamples, getExample, getExampleInfo } from "../src/examples";
 
 // ===== Extension State =====
 
@@ -306,6 +307,77 @@ export default function (pi: ExtensionAPI) {
       const count = rendererState.surfaces.size;
       rendererState.surfaces.clear();
       ctx.ui.notify(`Cleared ${count} A2UI surface(s)`, "info");
+    },
+  });
+
+  /**
+   * Show and render A2UI example UIs
+   */
+  pi.registerCommand("a2ui-examples", {
+    description: "Show A2UI example UIs (form, list, dashboard, etc.)",
+    handler: async (args, ctx) => {
+      const exampleKey = args.trim().toLowerCase();
+      const availableExamples = listExamples();
+
+      if (!exampleKey) {
+        // List all available examples
+        const exampleList = availableExamples
+          .map((key) => {
+            const info = getExampleInfo(key);
+            return `  • ${key}: ${info?.name} - ${info?.description}`;
+          })
+          .join("\n");
+
+        ctx.ui.notify(
+          `Available A2UI Examples:\n\n${exampleList}\n\nUsage: /a2ui-examples <name>\nExample: /a2ui-examples contact_form`,
+          "info",
+        );
+        return;
+      }
+
+      if (!availableExamples.includes(exampleKey)) {
+        ctx.ui.notify(
+          `Unknown example: ${exampleKey}\n\nAvailable: ${availableExamples.join(", ")}`,
+          "error",
+        );
+        return;
+      }
+
+      // Get and render the example
+      const exampleMessages = getExample(exampleKey);
+      if (!exampleMessages) {
+        ctx.ui.notify(`Failed to load example: ${exampleKey}`, "error");
+        return;
+      }
+
+      // Validate the example
+      const validation = validateA2UIMessages(exampleMessages);
+      if (!validation.valid) {
+        ctx.ui.notify(
+          `Example failed validation:\n${validation.errors.join("\n")}`,
+          "error",
+        );
+        return;
+      }
+
+      // Store and render the example
+      const surfaceId = extractSurfaceId(exampleMessages);
+      if (surfaceId) {
+        const surface: A2UISurface = {
+          surfaceId,
+          components: extractComponents(exampleMessages),
+          dataModel: extractDataModel(exampleMessages),
+        };
+        rendererState.surfaces.set(surfaceId, surface);
+
+        const info = getExampleInfo(exampleKey);
+        ctx.ui.notify(
+          `✓ Rendering example: ${info?.name}\n\n${info?.description}`,
+          "success",
+        );
+      } else {
+        ctx.ui.notify("Failed to extract surface ID from example", "error");
+      }
     },
   });
 }

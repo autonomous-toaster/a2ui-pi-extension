@@ -9,114 +9,42 @@ import * as path from "node:path";
 // ===== Default System Prompt Injection =====
 
 const A2UI_SCHEMA_PROMPT = `
-# A2UI Component Generation
+# A2UI JSON Generation
 
-When the user asks for an interactive UI, form, display, or interface, generate valid A2UI JSON.
+Generate A2UI JSON when user requests interactive UIs. Use delimiter \`---a2ui_JSON---\` to wrap the JSON block.
 
-## What is A2UI?
+## Components (v0.9): Text, Button, TextField, Card, Column, Row
 
-A2UI (Agent-to-UI) is a JSON-based protocol that lets agents describe user interfaces.
-- **Security First**: No code execution, only declarative component definitions
-- **Framework Agnostic**: Renders on web, mobile, and desktop
-- **LLM-Friendly**: Flat structure with ID references instead of nested objects
-
-## Core Components (v0.9)
-
-The following components are available:
-
-- **Text** - Display text content
-  Example: \`{"id": "title", "component": "Text", "text": "Hello World"}\`
-
-- **Button** - Clickable button with optional action
-  Example: \`{"id": "btn", "component": "Button", "child": "btn_label", "action": {"name": "submit"}}\`
-
-- **TextField** - Text input field with data binding
-  Example: \`{"id": "name_input", "component": "TextField", "label": "Your name", "value": {"path": "/form/name"}}\`
-
-- **Card** - Container for grouped content
-  Example: \`{"id": "card", "component": "Card", "children": ["title", "body"]}\`
-
-- **Column** - Vertical layout container
-  Example: \`{"id": "col", "component": "Column", "children": ["item1", "item2"]}\`
-
-- **Row** - Horizontal layout container
-  Example: \`{"id": "row", "component": "Row", "children": ["left", "right"]}\`
-
-## How to Generate A2UI
-
-1. Respond to the user's request with normal text explaining what UI you're building
-2. Generate A2UI JSON in a code block with delimiter \`---a2ui_JSON---\`
-3. Format your response like this:
-
-\`\`\`
-This is a contact form with fields for name and email:
-
-\\\`\\\`\\\`json
----a2ui_JSON---
-[
-  {"version": "v0.9", "createSurface": {"surfaceId": "contact_form"}},
-  {"version": "v0.9", "updateComponents": {
-    "surfaceId": "contact_form",
-    "components": [
-      {"id": "root", "component": "Column", "children": ["title", "name_field", "email_field", "submit_btn"]},
-      {"id": "title", "component": "Text", "text": "Contact Us"},
-      {"id": "name_field", "component": "TextField", "label": "Full Name", "value": {"path": "/form/name"}},
-      {"id": "email_field", "component": "TextField", "label": "Email", "value": {"path": "/form/email"}},
-      {"id": "submit_btn", "component": "Button", "child": "submit_text", "action": {"name": "submit"}},
-      {"id": "submit_text", "component": "Text", "text": "Submit"}
-    ]
-  }}
-]
-\\\`\\\`\\\`
-\`\`\`
-
-## Critical Rules
-
-1. **Start with createSurface** - First message MUST have \`createSurface\` with a \`surfaceId\`
-2. **Use ID references** - Children reference component IDs (e.g., \`"child": "btn_label"\`), never inline objects
-3. **Unique IDs** - All component IDs must be unique within a surface
-4. **Data binding** - Use JSON paths like \`{"path": "/form/fieldName"}\` for dynamic data
-5. **JSON paths** - Data paths must start with \`/\` (e.g., \`/user/email\`)
-6. **Type correctness** - Component \`component\` field must match one of the 6 types above
-7. **No code execution** - A2UI is declarative only — you cannot execute arbitrary code
-8. **Array format** - Always wrap messages in an array \`[...]\`
-9. **Version field** - Every message must have \`"version": "v0.9"\`
-
-## Example: Multi-Step Form
-
+## Format
 \`\`\`json
 ---a2ui_JSON---
 [
-  {"version": "v0.9", "createSurface": {"surfaceId": "form"}},
-  {"version": "v0.9", "updateComponents": {
-    "surfaceId": "form",
-    "components": [
-      {"id": "main", "component": "Card", "children": ["heading", "fields", "actions"]},
-      {"id": "heading", "component": "Text", "text": "Registration"},
-      {"id": "fields", "component": "Column", "children": ["name_input", "email_input", "password_input"]},
-      {"id": "name_input", "component": "TextField", "label": "Username", "value": {"path": "/reg/username"}},
-      {"id": "email_input", "component": "TextField", "label": "Email", "value": {"path": "/reg/email"}},
-      {"id": "password_input", "component": "TextField", "label": "Password", "value": {"path": "/reg/password"}},
-      {"id": "actions", "component": "Row", "children": ["cancel_btn", "submit_btn"]},
-      {"id": "cancel_btn", "component": "Button", "child": "cancel_text", "action": {"name": "cancel"}},
-      {"id": "cancel_text", "component": "Text", "text": "Cancel"},
-      {"id": "submit_btn", "component": "Button", "child": "submit_text", "action": {"name": "submit"}, "attributes": {"primary": true}},
-      {"id": "submit_text", "component": "Text", "text": "Register"}
-    ]
-  }},
-  {"version": "v0.9", "updateDataModel": {"surfaceId": "form", "path": "/reg/username", "value": ""}}
+  {"version": "v0.9", "createSurface": {"surfaceId": "main"}},
+  {"version": "v0.9", "updateComponents": {"surfaceId": "main", "components": [
+    {"id": "root", "component": "Column", "children": ["title", "btn"]},
+    {"id": "title", "component": "Text", "text": "Title"},
+    {"id": "btn", "component": "Button", "child": "btn_text", "action": {"name": "submit"}},
+    {"id": "btn_text", "component": "Text", "text": "Click"}
+  ]}}
 ]
 \`\`\`
 
-## What NOT to Do
+## Rules
+1. First message: createSurface with surfaceId
+2. Children reference component IDs (strings), not objects
+3. Unique IDs within surface
+4. Data paths: {"path": "/key/field"}
+5. All messages have "version": "v0.9"
+6. Array format: wrap in [ ]
+7. No inline objects, no code execution
 
-❌ Don't use component types not in the 6 above (e.g., Modal, Slider, CheckBox yet)
-❌ Don't nest components inline - always use ID references
-❌ Don't forget the createSurface message
-❌ Don't forget version field in messages
-❌ Don't use duplicate IDs
-❌ Don't reference non-existent component IDs
-❌ Don't include code, scripts, or executable content
+## Component Examples
+- Text: {"id": "t1", "component": "Text", "text": "Hello"}
+- Button: {"id": "b1", "component": "Button", "child": "label", "action": {"name": "click"}}
+- TextField: {"id": "f1", "component": "TextField", "label": "Name", "value": {"path": "/form/name"}}
+- Card: {"id": "c1", "component": "Card", "children": ["title", "body"]}
+- Column: {"id": "col", "component": "Column", "children": ["item1", "item2"]}
+- Row: {"id": "row", "component": "Row", "children": ["left", "right"]}
 `;
 
 // ===== Injection Functions =====
