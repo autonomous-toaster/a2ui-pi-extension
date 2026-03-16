@@ -471,6 +471,143 @@ export default function (pi: ExtensionAPI) {
       }
     },
   });
+
+  // Register command for manual form testing
+  pi.registerCommand("a2ui-form", {
+    description: "Manually create and interact with an A2UI form",
+    handler: async (_args, ctx) => {
+      if (!ctx.hasUI) {
+        ctx.ui.notify("Error: UI not available", "error");
+        return;
+      }
+
+      console.log("[A2UI] /a2ui-form command triggered");
+
+      // Generate mock form
+      const mockA2UI = `
+I'll create a contact form for you.
+
+---a2ui_JSON---
+[
+  {"version": "v0.9", "createSurface": {"surfaceId": "contact_form"}},
+  {"version": "v0.9", "updateComponents": {
+    "surfaceId": "contact_form",
+    "components": [
+      {
+        "id": "form",
+        "component": "Column",
+        "children": ["title", "name_field", "email_field", "message_field", "buttons"]
+      },
+      {"id": "title", "component": "Text", "text": "Contact Form", "attributes": {"textAlignment": "center"}},
+      {
+        "id": "name_field",
+        "component": "TextField",
+        "label": "Your Name",
+        "placeholder": "Enter your name"
+      },
+      {
+        "id": "email_field",
+        "component": "TextField",
+        "label": "Email Address",
+        "placeholder": "Enter your email"
+      },
+      {
+        "id": "message_field",
+        "component": "TextField",
+        "label": "Message",
+        "placeholder": "Enter your message"
+      },
+      {
+        "id": "buttons",
+        "component": "Row",
+        "children": ["submit_btn", "cancel_btn"]
+      },
+      {
+        "id": "submit_btn",
+        "component": "Button",
+        "child": "submit_label",
+        "attributes": {"primary": true}
+      },
+      {
+        "id": "submit_label",
+        "component": "Text",
+        "text": "Submit"
+      },
+      {
+        "id": "cancel_btn",
+        "component": "Button",
+        "child": "cancel_label"
+      },
+      {
+        "id": "cancel_label",
+        "component": "Text",
+        "text": "Cancel"
+      }
+    ]
+  }}
+]
+---a2ui_JSON---
+`;
+
+      // Parse and validate
+      let { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
+
+      if (!a2uiMessages.length) {
+        ctx.ui.notify(`Failed to parse: ${parseError}`, "error");
+        return;
+      }
+
+      // Validate
+      const validation = validateA2UIMessages(a2uiMessages);
+      if (!validation.valid) {
+        ctx.ui.notify(`Validation failed: ${validation.errors.join("; ")}`, "error");
+        return;
+      }
+
+      // Extract components
+      const surfaceId = extractSurfaceId(a2uiMessages);
+      const components = extractComponents(a2uiMessages);
+
+      if (!surfaceId || components.size === 0) {
+        ctx.ui.notify("No components found", "error");
+        return;
+      }
+
+      console.log("[A2UI] Command: showing form with", components.size, "components");
+
+      // Show form
+      const formData = await ctx.ui.custom<FormData | null>((tui, theme, _kb, done) => {
+        console.log("[A2UI] Command: In ctx.ui.custom callback");
+        const form = new InteractiveA2UIForm(components, theme);
+
+        form.onSubmit = (data) => {
+          console.log("[A2UI] Command: Form submitted", data);
+          done(data);
+        };
+
+        form.onCancel = () => {
+          console.log("[A2UI] Command: Form cancelled");
+          done(null);
+        };
+
+        return {
+          render: (width) => form.render(width),
+          invalidate: () => form.invalidate(),
+          handleInput: (data) => {
+            console.log("[A2UI] Command: handleInput called with", JSON.stringify(data));
+            form.handleInput(data);
+            tui.requestRender();
+          },
+        };
+      });
+
+      if (formData) {
+        ctx.ui.notify(`Form submitted: ${JSON.stringify(formData)}`, "success");
+      } else {
+        ctx.ui.notify("Form cancelled", "info");
+      }
+    },
+  });
 }
 
 // ===== Helper Functions =====
