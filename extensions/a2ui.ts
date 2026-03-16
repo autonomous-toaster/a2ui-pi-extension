@@ -87,6 +87,16 @@ export default function (pi: ExtensionAPI) {
     extractComponents: typeof extractComponents,
     createA2UIFormComponent: typeof createA2UIFormComponent,
   });
+
+  // SIMPLE TEST COMMAND - zero dependencies
+  pi.registerCommand("a2ui-test", {
+    description: "Super simple test - no A2UI involved",
+    handler: async (_args, ctx) => {
+      console.error("[A2UI TEST] Handler called!");
+      ctx.ui.notify("TEST WORKS", "success");
+    },
+  });
+  console.error("[A2UI Extension] Test command registered");
   
   // NOTE: A2UI schema injection is disabled for demos
   // The demos use mocked A2UI data via /a2ui-demo commands
@@ -96,11 +106,20 @@ export default function (pi: ExtensionAPI) {
   // pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
 
   // === BASE FORM (Non-overlay for testing) ===
-  pi.registerCommand("a2ui-demo form", {
+  console.error("[A2UI Extension] About to register a2ui-demo form command");
+  pi.registerCommand("a2ui-form", {
     description: "Test interactive A2UI form (Phase 1) - basic contact form",
     handler: async (_args, ctx) => {
-      console.error("[A2UI] /a2ui-demo form handler called");
-      const mockA2UI = `
+      try {
+        console.error("[A2UI] /a2ui-demo form handler called");
+        
+        if (!ctx.hasUI) {
+          console.error("[A2UI] No UI available");
+          ctx.ui.notify("Error: UI not available", "error");
+          return;
+        }
+        
+        const mockA2UI = `
 ---a2ui_JSON---
 [
   {"version": "v0.9", "createSurface": {"surfaceId": "test_form"}},
@@ -119,28 +138,74 @@ export default function (pi: ExtensionAPI) {
 ]
 ---a2ui_JSON---
 `;
-      console.error("[A2UI] About to call runDemoForm");
-      await runDemoForm("Contact Form", mockA2UI, ctx, false);
-      console.error("[A2UI] runDemoForm completed");
+        
+        console.error("[A2UI] Parsing A2UI response");
+        const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
+        console.error("[A2UI] Parse result:", { msgCount: a2uiMessages.length, parseError });
+        
+        if (!a2uiMessages.length) {
+          console.error("[A2UI] No messages parsed");
+          ctx.ui.notify(`Parse error: ${parseError}`, "error");
+          return;
+        }
+
+        console.error("[A2UI] Validating");
+        const validation = validateA2UIMessages(a2uiMessages);
+        console.error("[A2UI] Validation result:", validation);
+        
+        if (!validation.valid) {
+          console.error("[A2UI] Validation failed");
+          ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
+          return;
+        }
+
+        console.error("[A2UI] Extracting components");
+        const components = extractComponents(a2uiMessages);
+        console.error("[A2UI] Components extracted:", components.size);
+        
+        if (!components.size) {
+          console.error("[A2UI] No components found");
+          ctx.ui.notify("No components extracted", "error");
+          return;
+        }
+
+        console.error("[A2UI] Creating form component");
+        const componentFn = createA2UIFormComponent(components, ctx.ui.theme);
+        console.error("[A2UI] Component function created");
+
+        console.error("[A2UI] Calling ctx.ui.custom");
+        const formData = await ctx.ui.custom(componentFn);
+        console.error("[A2UI] ctx.ui.custom returned:", formData);
+
+        if (formData) {
+          ctx.ui.notify("Contact Form submitted successfully", "info");
+        }
+        
+        console.error("[A2UI] Handler complete");
+      } catch (err) {
+        console.error("[A2UI] Handler error:", err);
+        ctx.ui.notify(`Error in a2ui-demo form: ${err}`, "error");
+      }
     },
   });
+  console.error("[A2UI Extension] a2ui-form command registered successfully");
 
   // === PHASE 2A DEMOS ===
-  pi.registerCommand("a2ui-demo survey", {
+  pi.registerCommand("a2ui-survey", {
     description: "Phase 2A: Product Survey (all component types)",
     handler: async (_args, ctx) => {
       await runDemoForm("Product Survey", getPhase2ASurveyExample(), ctx, false);
     },
   });
 
-  pi.registerCommand("a2ui-demo settings", {
+  pi.registerCommand("a2ui-settings", {
     description: "Phase 2A: Settings form (checkboxes, select, radio)",
     handler: async (_args, ctx) => {
       await runDemoForm("Settings", getPhase2ASettingsExample(), ctx, false);
     },
   });
 
-  pi.registerCommand("a2ui-demo products", {
+  pi.registerCommand("a2ui-products", {
     description: "Phase 2A: Product list (list, radio, checkbox)",
     handler: async (_args, ctx) => {
       await runDemoForm("Product List", getPhase2AProductListExample(), ctx, false);
@@ -148,35 +213,35 @@ export default function (pi: ExtensionAPI) {
   });
 
   // === PHASE 2B+ DEMOS (Image support) ===
-  pi.registerCommand("a2ui-demo profile", {
+  pi.registerCommand("a2ui-profile", {
     description: "Phase 2B+: Profile card with avatar image",
     handler: async (_args, ctx) => {
       await runDemoForm("Profile Card", getProfileCardExample(), ctx, false);
     },
   });
 
-  pi.registerCommand("a2ui-demo team", {
+  pi.registerCommand("a2ui-team", {
     description: "Phase 2B+: Team selection with member avatars",
     handler: async (_args, ctx) => {
       await runDemoForm("Team Selection", getTeamSelectionExample(), ctx, false);
     },
   });
 
-  pi.registerCommand("a2ui-demo showcase", {
+  pi.registerCommand("a2ui-showcase", {
     description: "Phase 2B+: Product showcase with image (e-commerce)",
     handler: async (_args, ctx) => {
       await runDemoForm("Product Showcase", getProductShowcaseExample(), ctx, false);
     },
   });
 
-  pi.registerCommand("a2ui-demo dashboard", {
+  pi.registerCommand("a2ui-dashboard", {
     description: "Phase 2B+: User dashboard with profile image",
     handler: async (_args, ctx) => {
       await runDemoForm("Dashboard", getDashboardExample(), ctx, false);
     },
   });
 
-  pi.registerCommand("a2ui-demo article", {
+  pi.registerCommand("a2ui-article", {
     description: "Phase 2B+: Article with featured image and feedback",
     handler: async (_args, ctx) => {
       await runDemoForm("Article", getArticleExample(), ctx, false);
