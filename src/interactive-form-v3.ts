@@ -99,10 +99,14 @@ export function createA2UIFormComponent(
           imageStates.set(fieldId, { base64: result.base64, loading: false });
           // Create TuiImage component
           try {
+            // Create proper ImageTheme for pi-tui Image component
+            const imageTheme = {
+              fallbackColor: (str: string) => theme.fg("muted", str)
+            };
             const tuiImage = new TuiImage(
               result.base64,
               getMimeTypeFromUrl(url),
-              theme,
+              imageTheme,
               { maxWidthCells: 40, maxHeightCells: 20 }
             );
             renderedImages.set(fieldId, tuiImage);
