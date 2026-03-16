@@ -160,6 +160,7 @@ export function createA2UIFormComponent(
 
     // === HELPERS ===
     function refresh() {
+      console.error("[Form Debug] refresh() called");
       cachedLines = undefined;
       cachedWidth = undefined;
       tui.requestRender();
@@ -170,6 +171,8 @@ export function createA2UIFormComponent(
       if (cachedLines && cachedWidth === width) {
         return cachedLines;
       }
+
+      console.error("[Form Debug] render() called, width:", width, "cached:", !!cachedLines);
 
       const lines: string[] = [];
       const add = (s: string) => lines.push(truncateToWidth(s, width));
@@ -466,6 +469,7 @@ export function createA2UIFormComponent(
     // === INPUT HANDLING ===
     function handleInput(data: string) {
       if (!data) return;
+      console.error("[Form Debug] handleInput called with:", JSON.stringify(data));
       
       const key = data;
       const focusedComp = focusedButtonIndex === -1 ? components.get(fieldIds[focusedFieldIndex]) : null;
