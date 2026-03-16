@@ -1,6 +1,6 @@
 /**
- * A2UI Extension for Pi Coding Agent - V2
- * Simplified architecture using question.ts pattern
+ * A2UI Extension for Pi Coding Agent - V3
+ * With overlay support and reorganized demo commands
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
@@ -12,6 +12,7 @@ import { createA2UIBeforeAgentStartHandler, injectA2UISchema } from "../src/prom
 import { parseA2UIResponse, extractSurfaceId, extractComponents } from "../src/parser";
 import { validateA2UIMessages } from "../src/validation";
 import { createA2UIFormComponent, type FormData } from "../src/interactive-form-v3";
+import { createA2UIOverlayManager } from "../src/overlay-manager";
 import {
   getPhase2ASurveyExample,
   getPhase2ASettingsExample,
@@ -25,20 +26,67 @@ import {
   getArticleExample,
 } from "../src/examples-advanced";
 
+// Helper to run example forms with shared logic
+async function runDemoForm(
+  name: string,
+  example: string,
+  ctx: any,
+  useOverlay: boolean = false
+) {
+  if (!ctx.hasUI) {
+    ctx.ui.notify("Error: UI not available", "error");
+    return;
+  }
+
+  const { a2uiMessages, parseError } = parseA2UIResponse(example);
+  if (!a2uiMessages.length) {
+    ctx.ui.notify(`Parse error: ${parseError}`, "error");
+    return;
+  }
+
+  const validation = validateA2UIMessages(a2uiMessages);
+  if (!validation.valid) {
+    ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
+    return;
+  }
+
+  const components = extractComponents(a2uiMessages);
+  if (!components.size) {
+    ctx.ui.notify("No components extracted", "error");
+    return;
+  }
+
+  const componentFn = useOverlay
+    ? createA2UIOverlayManager(components, ctx.ui.theme, (data) => {
+        if (data) {
+          ctx.ui.notify(`${name} submitted (Ctrl+U to close)`, "info");
+        }
+      })
+    : createA2UIFormComponent(components, ctx.ui.theme);
+
+  const formData = await ctx.ui.custom(componentFn, useOverlay ? {
+    overlay: true,
+    overlayOptions: {
+      width: "80%",
+      maxHeight: "85%",
+      anchor: "center",
+      margin: { top: 2 },
+    },
+  } : undefined);
+
+  if (formData && !useOverlay) {
+    ctx.ui.notify(`${name} submitted successfully`, "info");
+  }
+}
+
 export default function (pi: ExtensionAPI) {
   // Inject A2UI schema into system prompt
   pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
 
-  // Register the /a2ui-form command for manual testing
-  pi.registerCommand("a2ui-form", {
-    description: "Test interactive A2UI form (Phase 1)",
+  // === BASE FORM (Non-overlay for testing) ===
+  pi.registerCommand("a2ui-demo|form", {
+    description: "Test interactive A2UI form (Phase 1) - basic contact form",
     handler: async (_args, ctx) => {
-      if (!ctx.hasUI) {
-        ctx.ui.notify("Error: UI not available", "error");
-        return;
-      }
-
-      // Mock A2UI JSON
       const mockA2UI = `
 ---a2ui_JSON---
 [
@@ -58,45 +106,71 @@ export default function (pi: ExtensionAPI) {
 ]
 ---a2ui_JSON---
 `;
-
-      // Parse A2UI
-      const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
-      if (!a2uiMessages.length) {
-        ctx.ui.notify(`Parse error: ${parseError}`, "error");
-        return;
-      }
-
-      // Validate
-      const validation = validateA2UIMessages(a2uiMessages);
-      if (!validation.valid) {
-        ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
-        return;
-      }
-
-      // Extract components
-      const components = extractComponents(a2uiMessages);
-      if (!components.size) {
-        ctx.ui.notify("No components extracted", "error");
-        return;
-      }
-
-      // Show interactive form
-      const formData = await ctx.ui.custom(createA2UIFormComponent(components, ctx.ui.theme));
-
-      if (formData) {
-        const fields = Object.entries(formData)
-          .map(([k, v]) => `${k}: ${v || "(empty)"}`)
-          .join(" | ");
-        ctx.ui.notify(`Submitted: ${fields}`, "info");
-      } else {
-        ctx.ui.notify("Form cancelled", "info");
-      }
+      return runDemoForm("Contact Form", mockA2UI, ctx, false);
     },
   });
 
-  // Phase 2A: Product Survey Example
-  pi.registerCommand("a2ui-survey", {
-    description: "Phase 2A Example: Product Survey with all components",
+  // === PHASE 2A DEMOS ===
+  pi.registerCommand("a2ui-demo|survey", {
+    description: "Phase 2A: Product Survey (all component types)",
+    handler: async (_args, ctx) => {
+      return runDemoForm("Product Survey", getPhase2ASurveyExample(), ctx, false);
+    },
+  });
+
+  pi.registerCommand("a2ui-demo|settings", {
+    description: "Phase 2A: Settings form (checkboxes, select, radio)",
+    handler: async (_args, ctx) => {
+      return runDemoForm("Settings", getPhase2ASettingsExample(), ctx, false);
+    },
+  });
+
+  pi.registerCommand("a2ui-demo|products", {
+    description: "Phase 2A: Product list (list, radio, checkbox)",
+    handler: async (_args, ctx) => {
+      return runDemoForm("Product List", getPhase2AProductListExample(), ctx, false);
+    },
+  });
+
+  // === PHASE 2B+ DEMOS (Image support) ===
+  pi.registerCommand("a2ui-demo|profile", {
+    description: "Phase 2B+: Profile card with avatar image",
+    handler: async (_args, ctx) => {
+      return runDemoForm("Profile Card", getProfileCardExample(), ctx, false);
+    },
+  });
+
+  pi.registerCommand("a2ui-demo|team", {
+    description: "Phase 2B+: Team selection with member avatars",
+    handler: async (_args, ctx) => {
+      return runDemoForm("Team Selection", getTeamSelectionExample(), ctx, false);
+    },
+  });
+
+  pi.registerCommand("a2ui-demo|showcase", {
+    description: "Phase 2B+: Product showcase with image (e-commerce)",
+    handler: async (_args, ctx) => {
+      return runDemoForm("Product Showcase", getProductShowcaseExample(), ctx, false);
+    },
+  });
+
+  pi.registerCommand("a2ui-demo|dashboard", {
+    description: "Phase 2B+: User dashboard with profile image",
+    handler: async (_args, ctx) => {
+      return runDemoForm("Dashboard", getDashboardExample(), ctx, false);
+    },
+  });
+
+  pi.registerCommand("a2ui-demo|article", {
+    description: "Phase 2B+: Article with featured image and feedback",
+    handler: async (_args, ctx) => {
+      return runDemoForm("Article", getArticleExample(), ctx, false);
+    },
+  });
+
+  // === OVERLAY DEMO ===
+  pi.registerCommand("a2ui-overlay", {
+    description: "Demo overlay mode with Ctrl+U toggle (press Ctrl+U to show/hide)",
     handler: async (_args, ctx) => {
       if (!ctx.hasUI) {
         ctx.ui.notify("Error: UI not available", "error");
@@ -104,7 +178,6 @@ export default function (pi: ExtensionAPI) {
       }
 
       const mockA2UI = getPhase2ASurveyExample();
-
       const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
       if (!a2uiMessages.length) {
         ctx.ui.notify(`Parse error: ${parseError}`, "error");
@@ -123,282 +196,24 @@ export default function (pi: ExtensionAPI) {
         return;
       }
 
-      const formData = await ctx.ui.custom(createA2UIFormComponent(components, ctx.ui.theme));
+      const componentFn = createA2UIOverlayManager(components, ctx.ui.theme, (data) => {
+        if (data) {
+          const entries = Object.entries(data).length;
+          ctx.ui.notify(`Overlay form submitted with ${entries} fields`, "info");
+        }
+      });
 
-      if (formData) {
-        const fields = Object.entries(formData).map(([k, v]) => `${k}: ${v || "(empty)"}`);
-        ctx.ui.notify(`Survey submitted with ${fields.length} fields`, "info");
-      } else {
-        ctx.ui.notify("Survey cancelled", "info");
-      }
-    },
-  });
+      await ctx.ui.custom(componentFn, {
+        overlay: true,
+        overlayOptions: {
+          width: "80%",
+          maxHeight: "85%",
+          anchor: "center",
+          margin: { top: 2 },
+        },
+      });
 
-  // Phase 2A: Settings Form Example
-  pi.registerCommand("a2ui-settings", {
-    description: "Phase 2A Example: Settings form with checkboxes and select",
-    handler: async (_args, ctx) => {
-      if (!ctx.hasUI) {
-        ctx.ui.notify("Error: UI not available", "error");
-        return;
-      }
-
-      const mockA2UI = getPhase2ASettingsExample();
-
-      const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
-      if (!a2uiMessages.length) {
-        ctx.ui.notify(`Parse error: ${parseError}`, "error");
-        return;
-      }
-
-      const validation = validateA2UIMessages(a2uiMessages);
-      if (!validation.valid) {
-        ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
-        return;
-      }
-
-      const components = extractComponents(a2uiMessages);
-      if (!components.size) {
-        ctx.ui.notify("No components extracted", "error");
-        return;
-      }
-
-      const formData = await ctx.ui.custom(createA2UIFormComponent(components, ctx.ui.theme));
-
-      if (formData) {
-        ctx.ui.notify("Settings saved successfully", "info");
-      } else {
-        ctx.ui.notify("Settings not saved", "info");
-      }
-    },
-  });
-
-  // Phase 2A: Product List Example
-  pi.registerCommand("a2ui-products", {
-    description: "Phase 2A Example: Product selection with list component",
-    handler: async (_args, ctx) => {
-      if (!ctx.hasUI) {
-        ctx.ui.notify("Error: UI not available", "error");
-        return;
-      }
-
-      const mockA2UI = getPhase2AProductListExample();
-
-      const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
-      if (!a2uiMessages.length) {
-        ctx.ui.notify(`Parse error: ${parseError}`, "error");
-        return;
-      }
-
-      const validation = validateA2UIMessages(a2uiMessages);
-      if (!validation.valid) {
-        ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
-        return;
-      }
-
-      const components = extractComponents(a2uiMessages);
-      if (!components.size) {
-        ctx.ui.notify("No components extracted", "error");
-        return;
-      }
-
-      const formData = await ctx.ui.custom(createA2UIFormComponent(components, ctx.ui.theme));
-
-      if (formData) {
-        ctx.ui.notify("Product selected and added to cart", "info");
-      } else {
-        ctx.ui.notify("Product selection cancelled", "info");
-      }
-    },
-  });
-
-  // Phase 2B+: Profile Card with Avatar Image
-  pi.registerCommand("a2ui-profile", {
-    description: "Phase 2B+: Profile card with avatar image (image rendering demo)",
-    handler: async (_args, ctx) => {
-      if (!ctx.hasUI) {
-        ctx.ui.notify("Error: UI not available", "error");
-        return;
-      }
-
-      const mockA2UI = getProfileCardExample();
-      const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
-      if (!a2uiMessages.length) {
-        ctx.ui.notify(`Parse error: ${parseError}`, "error");
-        return;
-      }
-
-      const validation = validateA2UIMessages(a2uiMessages);
-      if (!validation.valid) {
-        ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
-        return;
-      }
-
-      const components = extractComponents(a2uiMessages);
-      if (!components.size) {
-        ctx.ui.notify("No components extracted", "error");
-        return;
-      }
-
-      const formData = await ctx.ui.custom(createA2UIFormComponent(components, ctx.ui.theme));
-
-      if (formData) {
-        ctx.ui.notify("Profile updated", "info");
-      } else {
-        ctx.ui.notify("Profile update cancelled", "info");
-      }
-    },
-  });
-
-  // Phase 2B+: Team Selection with Avatars
-  pi.registerCommand("a2ui-team", {
-    description: "Phase 2B+: Team selection with member avatars (multiple images demo)",
-    handler: async (_args, ctx) => {
-      if (!ctx.hasUI) {
-        ctx.ui.notify("Error: UI not available", "error");
-        return;
-      }
-
-      const mockA2UI = getTeamSelectionExample();
-      const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
-      if (!a2uiMessages.length) {
-        ctx.ui.notify(`Parse error: ${parseError}`, "error");
-        return;
-      }
-
-      const validation = validateA2UIMessages(a2uiMessages);
-      if (!validation.valid) {
-        ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
-        return;
-      }
-
-      const components = extractComponents(a2uiMessages);
-      if (!components.size) {
-        ctx.ui.notify("No components extracted", "error");
-        return;
-      }
-
-      const formData = await ctx.ui.custom(createA2UIFormComponent(components, ctx.ui.theme));
-
-      if (formData) {
-        ctx.ui.notify("Team selected", "info");
-      } else {
-        ctx.ui.notify("Team selection cancelled", "info");
-      }
-    },
-  });
-
-  // Phase 2B+: Product Showcase with Image
-  pi.registerCommand("a2ui-product-showcase", {
-    description: "Phase 2B+: Product showcase with image (e-commerce demo)",
-    handler: async (_args, ctx) => {
-      if (!ctx.hasUI) {
-        ctx.ui.notify("Error: UI not available", "error");
-        return;
-      }
-
-      const mockA2UI = getProductShowcaseExample();
-      const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
-      if (!a2uiMessages.length) {
-        ctx.ui.notify(`Parse error: ${parseError}`, "error");
-        return;
-      }
-
-      const validation = validateA2UIMessages(a2uiMessages);
-      if (!validation.valid) {
-        ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
-        return;
-      }
-
-      const components = extractComponents(a2uiMessages);
-      if (!components.size) {
-        ctx.ui.notify("No components extracted", "error");
-        return;
-      }
-
-      const formData = await ctx.ui.custom(createA2UIFormComponent(components, ctx.ui.theme));
-
-      if (formData) {
-        ctx.ui.notify("Product added to cart", "info");
-      } else {
-        ctx.ui.notify("Shopping cancelled", "info");
-      }
-    },
-  });
-
-  // Phase 2B+: Dashboard with Profile Image
-  pi.registerCommand("a2ui-dashboard", {
-    description: "Phase 2B+: User dashboard with profile image (settings demo)",
-    handler: async (_args, ctx) => {
-      if (!ctx.hasUI) {
-        ctx.ui.notify("Error: UI not available", "error");
-        return;
-      }
-
-      const mockA2UI = getDashboardExample();
-      const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
-      if (!a2uiMessages.length) {
-        ctx.ui.notify(`Parse error: ${parseError}`, "error");
-        return;
-      }
-
-      const validation = validateA2UIMessages(a2uiMessages);
-      if (!validation.valid) {
-        ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
-        return;
-      }
-
-      const components = extractComponents(a2uiMessages);
-      if (!components.size) {
-        ctx.ui.notify("No components extracted", "error");
-        return;
-      }
-
-      const formData = await ctx.ui.custom(createA2UIFormComponent(components, ctx.ui.theme));
-
-      if (formData) {
-        ctx.ui.notify("Preferences saved", "info");
-      } else {
-        ctx.ui.notify("Preferences not saved", "info");
-      }
-    },
-  });
-
-  // Phase 2B+: Article with Featured Image
-  pi.registerCommand("a2ui-article", {
-    description: "Phase 2B+: Article with featured image (content with feedback demo)",
-    handler: async (_args, ctx) => {
-      if (!ctx.hasUI) {
-        ctx.ui.notify("Error: UI not available", "error");
-        return;
-      }
-
-      const mockA2UI = getArticleExample();
-      const { a2uiMessages, parseError } = parseA2UIResponse(mockA2UI);
-      if (!a2uiMessages.length) {
-        ctx.ui.notify(`Parse error: ${parseError}`, "error");
-        return;
-      }
-
-      const validation = validateA2UIMessages(a2uiMessages);
-      if (!validation.valid) {
-        ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
-        return;
-      }
-
-      const components = extractComponents(a2uiMessages);
-      if (!components.size) {
-        ctx.ui.notify("No components extracted", "error");
-        return;
-      }
-
-      const formData = await ctx.ui.custom(createA2UIFormComponent(components, ctx.ui.theme));
-
-      if (formData) {
-        ctx.ui.notify("Feedback submitted", "info");
-      } else {
-        ctx.ui.notify("Feedback cancelled", "info");
-      }
+      ctx.ui.notify("Overlay demo closed. Use /a2ui-overlay to reopen.", "info");
     },
   });
 }
