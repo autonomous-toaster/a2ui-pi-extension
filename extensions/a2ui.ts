@@ -390,6 +390,9 @@ export default function (pi: ExtensionAPI) {
   // DISABLED FOR DEMO MODE:
   pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
 
+  // Track last displayed form for reopening after cancellation
+  let lastFormComponents: Map<string, any> | null = null;
+
   // Register tool: display_a2ui_form
   // LLM calls this tool with A2UI JSON to display forms
   pi.registerTool({
@@ -431,12 +434,18 @@ export default function (pi: ExtensionAPI) {
 
         console.error("[A2UI Tool] Displaying form with", components.size, "components");
 
+        // Store components for potential reopen via keyboard shortcut
+        lastFormComponents = components;
+
         // Display form
         const componentFn = createA2UIFormComponent(components, ctx.ui.theme);
         const formData = await ctx.ui.custom(componentFn);
 
         if (formData) {
           console.error("[A2UI Tool] Form submitted with data");
+          
+          // Clear stored form after successful submission
+          lastFormComponents = null;
           
           // Compress formData into readable format to minimize context usage
           const compressedData = compressFormData(formData);
@@ -449,10 +458,10 @@ export default function (pi: ExtensionAPI) {
             details: {},
           };
         } else {
-          console.error("[A2UI Tool] Form cancelled by user - not sending to LLM");
+          console.error("[A2UI Tool] Form cancelled by user - press Ctrl+F to reopen");
           // When form is cancelled, return empty content
-          // This prevents the cancellation from being sent to the LLM
-          // User returns to chat without any tool result message
+          // User can press Ctrl+F to reopen the form without re-triggering LLM
+          ctx.ui.notify("Form cancelled. Press Ctrl+F to reopen.", "info");
           return {
             content: [{ type: "text", text: "" }],
             details: {},
@@ -466,6 +475,39 @@ export default function (pi: ExtensionAPI) {
           details: {},
           isError: true,
         };
+      }
+    },
+  });
+
+  // Register keyboard shortcut to reopen last form
+  pi.registerShortcut("ctrl+f", {
+    label: "Reopen A2UI Form",
+    description: "Reopen the last form if it was cancelled",
+    handler: async (ctx) => {
+      if (!lastFormComponents || lastFormComponents.size === 0) {
+        ctx.ui.notify("No form to reopen", "info");
+        return;
+      }
+
+      console.error("[A2UI Shortcut] Reopening last form");
+      
+      // Display the form again
+      const componentFn = createA2UIFormComponent(lastFormComponents, ctx.ui.theme);
+      const formData = await ctx.ui.custom(componentFn);
+
+      if (formData) {
+        console.error("[A2UI Shortcut] Form resubmitted with data");
+        ctx.ui.notify("Form data captured. You can now reference it in your response.", "success");
+        
+        // Show the compressed data for reference
+        const compressedData = compressFormData(formData);
+        ctx.ui.notify(`Form data:\n${compressedData}`, "info");
+        
+        // Clear stored form after successful submission
+        lastFormComponents = null;
+      } else {
+        console.error("[A2UI Shortcut] Form cancelled again");
+        ctx.ui.notify("Form cancelled", "info");
       }
     },
   });
