@@ -1,0 +1,211 @@
+{
+  "version": "v0.9",
+  "description": "Minimal A2UI v0.9 schema for pi extension (5 core components)",
+  "components": {
+    "Text": {
+      "description": "Display text content",
+      "properties": {
+        "id": {"type": "string"},
+        "component": {"const": "Text"},
+        "text": {"type": "string"},
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "textAlignment": {"enum": ["start", "center", "end"]},
+            "style": {"type": "string"}
+          }
+        }
+      },
+      "required": ["id", "component", "text"]
+    },
+    "Button": {
+      "description": "Clickable button with optional action",
+      "properties": {
+        "id": {"type": "string"},
+        "component": {"const": "Button"},
+        "child": {"type": "string", "description": "ID of child component (typically Text)"},
+        "action": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "context": {"type": "object"}
+          },
+          "required": ["name"]
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "primary": {"type": "boolean"},
+            "disabled": {"type": "boolean"}
+          }
+        }
+      },
+      "required": ["id", "component"]
+    },
+    "TextField": {
+      "description": "Text input field with optional data binding",
+      "properties": {
+        "id": {"type": "string"},
+        "component": {"const": "TextField"},
+        "label": {"type": "string"},
+        "value": {
+          "oneOf": [
+            {"type": "string"},
+            {
+              "type": "object",
+              "properties": {
+                "path": {"type": "string", "description": "Data path like /form/name"}
+              }
+            }
+          ]
+        },
+        "placeholder": {"type": "string"},
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "required": {"type": "boolean"},
+            "disabled": {"type": "boolean"}
+          }
+        }
+      },
+      "required": ["id", "component"]
+    },
+    "Card": {
+      "description": "Container for grouped content",
+      "properties": {
+        "id": {"type": "string"},
+        "component": {"const": "Card"},
+        "children": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "IDs of child components"
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "title": {"type": "string"},
+            "elevation": {"type": "number"}
+          }
+        }
+      },
+      "required": ["id", "component"]
+    },
+    "Column": {
+      "description": "Vertical layout container",
+      "properties": {
+        "id": {"type": "string"},
+        "component": {"const": "Column"},
+        "children": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "spacing": {"type": "number"},
+            "mainAxisAlignment": {"enum": ["start", "center", "end", "spaceBetween"]}
+          }
+        }
+      },
+      "required": ["id", "component"]
+    },
+    "Row": {
+      "description": "Horizontal layout container",
+      "properties": {
+        "id": {"type": "string"},
+        "component": {"const": "Row"},
+        "children": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "spacing": {"type": "number"},
+            "mainAxisAlignment": {"enum": ["start", "center", "end", "spaceBetween"]}
+          }
+        }
+      },
+      "required": ["id", "component"]
+    }
+  },
+  "messageTypes": {
+    "createSurface": {
+      "description": "Initialize a UI surface",
+      "properties": {
+        "version": {"const": "v0.9"},
+        "createSurface": {
+          "type": "object",
+          "properties": {
+            "surfaceId": {"type": "string"},
+            "catalogId": {"type": "string", "default": "https://a2ui.org/specification/v0_9/standard_catalog.json"}
+          },
+          "required": ["surfaceId"]
+        }
+      },
+      "required": ["version", "createSurface"]
+    },
+    "updateComponents": {
+      "description": "Send or update component definitions",
+      "properties": {
+        "version": {"const": "v0.9"},
+        "updateComponents": {
+          "type": "object",
+          "properties": {
+            "surfaceId": {"type": "string"},
+            "components": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "string"},
+                  "component": {"type": "string", "enum": ["Text", "Button", "TextField", "Card", "Column", "Row"]}
+                },
+                "required": ["id", "component"]
+              }
+            }
+          },
+          "required": ["surfaceId", "components"]
+        }
+      },
+      "required": ["version", "updateComponents"]
+    },
+    "updateDataModel": {
+      "description": "Populate or update bound data",
+      "properties": {
+        "version": {"const": "v0.9"},
+        "updateDataModel": {
+          "type": "object",
+          "properties": {
+            "surfaceId": {"type": "string"},
+            "path": {"type": "string", "description": "JSON path like /form/name"},
+            "value": {}
+          },
+          "required": ["surfaceId", "path", "value"]
+        }
+      },
+      "required": ["version", "updateDataModel"]
+    },
+    "deleteSurface": {
+      "description": "Remove a surface",
+      "properties": {
+        "version": {"const": "v0.9"},
+        "deleteSurface": {
+          "type": "object",
+          "properties": {
+            "surfaceId": {"type": "string"}
+          },
+          "required": ["surfaceId"]
+        }
+      },
+      "required": ["version", "deleteSurface"]
+    }
+  },
+  "rules": {
+    "componentIds": "All component IDs must be unique within a surface",
+    "childReferences": "Component children must reference component IDs, not inline objects",
+    "surfaceInitialization": "Each surface must start with a createSurface message",
+    "dataBinding": "Data paths use JSON path notation like /form/fieldName",
+    "noCodeExecution": "A2UI is declarative only — agents cannot execute arbitrary code"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "@autonomous-toaster/a2ui-pi-extension",
+  "version": "0.1.0",
+  "description": "pi-coding-agent extension for A2UI — Agent-Driven User Interfaces (Google protocol)",
+  "keywords": [
+    "pi-package",
+    "a2ui",
+    "ui",
+    "agent-ui",
+    "llm",
+    "agents"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/autonomous-toaster/a2ui-pi-extension"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-tui": "*",
+    "@sinclair/typebox": "*"
+  },
+  "devDependencies": {
+    "@mariozechner/pi-coding-agent": "latest",
+    "@mariozechner/pi-ai": "latest",
+    "@mariozechner/pi-tui": "latest",
+    "@sinclair/typebox": "latest"
+  }
+}
