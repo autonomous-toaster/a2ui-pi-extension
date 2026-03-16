@@ -89,7 +89,7 @@ export function validateComponent(component: any): A2UIValidationResult {
 
   if (!component.component) {
     errors.push("Component missing required field: component");
-  } else if (!["Text", "Button", "TextField", "Checkbox", "RadioGroup", "SelectDropdown", "List", "Image", "Card", "Column", "Row"].includes(component.component)) {
+  } else if (!["Text", "Button", "TextField", "TextArea", "Checkbox", "RadioGroup", "SelectDropdown", "List", "Image", "Card", "Column", "Row"].includes(component.component)) {
     errors.push(`Invalid component type: ${component.component}`);
   }
 
@@ -106,6 +106,13 @@ export function validateComponent(component: any): A2UIValidationResult {
       }
       break;
     case "TextField":
+      if (component.value?.path) {
+        if (!validateDataPath(component.value.path)) {
+          errors.push(`Invalid data path: ${component.value.path}`);
+        }
+      }
+      break;
+    case "TextArea":
       if (component.value?.path) {
         if (!validateDataPath(component.value.path)) {
           errors.push(`Invalid data path: ${component.value.path}`);
