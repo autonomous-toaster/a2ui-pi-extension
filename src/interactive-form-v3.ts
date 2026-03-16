@@ -327,8 +327,10 @@ export function createA2UIFormComponent(
           const displayValue = value || theme.fg("dim", cb.placeholder || "(empty)");
           add(prefix + theme.fg("text", label + ":"));
           add("  " + displayValue);
+          
           if (isFocused) {
-            add("  " + theme.fg("dim", "Type to search, arrow keys to select"));
+            // Show available options
+            add("  " + theme.fg("dim", "Options: " + cb.options.map(o => o.label).join(", ")));
           }
           add("");
         } else if (comp.component === "DatePicker") {
@@ -837,20 +839,45 @@ export function createA2UIFormComponent(
 
         if (comp.component === "Combobox") {
           const cb = comp as ComboboxComponent;
+          const currentValue = fieldValues.get(currentField) || "";
           
           // Backspace
           const isBackspace = key === "\x7F" || key === "\x08";
           if (isBackspace) {
-            const current = fieldValues.get(currentField) || "";
-            fieldValues.set(currentField, current.slice(0, -1));
+            fieldValues.set(currentField, currentValue.slice(0, -1));
             refresh();
+            return;
+          }
+          
+          // Arrow down: move to next matching option
+          if (matchesKey(key, Key.down)) {
+            const matches = cb.options.filter(o => o.label.toLowerCase().includes(currentValue.toLowerCase()));
+            if (matches.length > 0) {
+              const currentMatch = matches.find(m => m.value === currentValue);
+              const currentIdx = matches.indexOf(currentMatch || matches[0]);
+              const nextIdx = Math.min(currentIdx + 1, matches.length - 1);
+              fieldValues.set(currentField, matches[nextIdx].label);
+              refresh();
+            }
+            return;
+          }
+          
+          // Arrow up: move to previous matching option
+          if (matchesKey(key, Key.up)) {
+            const matches = cb.options.filter(o => o.label.toLowerCase().includes(currentValue.toLowerCase()));
+            if (matches.length > 0) {
+              const currentMatch = matches.find(m => m.value === currentValue);
+              const currentIdx = matches.indexOf(currentMatch || matches[0]);
+              const prevIdx = Math.max(currentIdx - 1, 0);
+              fieldValues.set(currentField, matches[prevIdx].label);
+              refresh();
+            }
             return;
           }
           
           // Character input
           if (key && key.length === 1 && key.charCodeAt(0) >= 32 && key.charCodeAt(0) < 127) {
-            const current = fieldValues.get(currentField) || "";
-            fieldValues.set(currentField, current + key);
+            fieldValues.set(currentField, currentValue + key);
             refresh();
             return;
           }
