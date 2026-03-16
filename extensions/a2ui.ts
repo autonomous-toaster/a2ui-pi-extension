@@ -25,6 +25,36 @@ import {
   getArticleExample,
 } from "../src/examples-advanced";
 
+// Helper to compress form data into readable format (minimize context usage)
+function compressFormData(formData: FormData): string {
+  const lines: string[] = [];
+  
+  for (const [key, value] of Object.entries(formData)) {
+    if (value === null || value === undefined || value === "") {
+      continue; // Skip empty values
+    }
+    
+    // Format value based on type
+    let formatted = value;
+    if (Array.isArray(value)) {
+      formatted = value.join(", ");
+    } else if (typeof value === "object") {
+      formatted = JSON.stringify(value);
+    } else {
+      formatted = String(value);
+    }
+    
+    // Truncate very long values
+    if (formatted.length > 200) {
+      formatted = formatted.substring(0, 200) + "...";
+    }
+    
+    lines.push(`• ${key}: ${formatted}`);
+  }
+  
+  return lines.length > 0 ? lines.join("\n") : "(no data)";
+}
+
 // Helper to run example forms with shared logic
 async function runDemoForm(
   name: string,
@@ -407,12 +437,16 @@ export default function (pi: ExtensionAPI) {
 
         if (formData) {
           console.error("[A2UI Tool] Form submitted with data");
+          
+          // Compress formData into readable format to minimize context usage
+          const compressedData = compressFormData(formData);
+          
           return {
             content: [{ 
               type: "text", 
-              text: `Form submitted. User provided: ${JSON.stringify(formData)}` 
+              text: `Form submitted. User provided:\n${compressedData}` 
             }],
-            details: { formData },
+            details: {},
           };
         } else {
           console.error("[A2UI Tool] Form cancelled by user");
