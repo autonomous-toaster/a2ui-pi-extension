@@ -66,7 +66,11 @@ export function createA2UIOverlayManager(
             if (onOverlaySubmit) {
               onOverlaySubmit(formData);
             }
-            done(formData);
+            // Hide overlay instead of closing it (don't call done)
+            if (globalOverlayState) {
+              globalOverlayState.isVisible = false;
+              tui.requestRender();
+            }
           });
         }
 

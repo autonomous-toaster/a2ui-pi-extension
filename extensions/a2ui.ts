@@ -4,7 +4,7 @@
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { Text } from "@mariozechner/pi-tui";
+import { Text, matchesKey, Key } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 
 import type { A2UIServerMessage } from "../src/types";
@@ -26,12 +26,85 @@ import {
   getArticleExample,
 } from "../src/examples-advanced";
 
+// Global state for persistent overlay
+let persistentOverlayInitialized = false;
+let persistentOverlayContent: Map<string, any> | null = null;
+
+/**
+ * Create a persistent overlay that stays open across demo changes
+ * Ctrl+U toggles visibility, form submission hides (not closes)
+ * Can be updated with new form content
+ */
+function createPersistentA2UIOverlay(theme: any) {
+  let currentComponents: Map<string, any> | null = null;
+  let innerComponent: any = null;
+  let isVisible = false;
+  let tui: any = null;
+
+  return (tuiInstance: any, _theme: any, _kb: any, done: (data: any) => void) => {
+    tui = tuiInstance;
+    
+    // Never call done - overlay is permanent
+    const neverDone = () => {};
+
+    return {
+      render: (width: number): string[] => {
+        if (!isVisible || !innerComponent) return [];
+        return innerComponent.render(width);
+      },
+
+      handleInput: (data: string): void => {
+        // Ctrl+U toggles overlay visibility
+        if (matchesKey(data, "ctrl+u")) {
+          isVisible = !isVisible;
+          if (tui) tui.requestRender();
+          return;
+        }
+
+        // Pass input to form if visible
+        if (isVisible && innerComponent) {
+          innerComponent.handleInput(data);
+        }
+      },
+
+      invalidate: (): void => {
+        if (innerComponent?.invalidate) {
+          innerComponent.invalidate();
+        }
+      },
+
+      // Method to update the displayed form
+      updateForm: (components: Map<string, any>, theme: any, onSubmit?: (data: any) => void) => {
+        currentComponents = components;
+        isVisible = true;
+
+        // Create new inner form component
+        const formComponentFactory = createA2UIFormComponent(components, theme);
+        innerComponent = formComponentFactory(
+          tui,
+          theme,
+          null,
+          (formData) => {
+            if (onSubmit) onSubmit(formData);
+            // Hide overlay on form submission, don't close
+            isVisible = false;
+            if (tui) tui.requestRender();
+          }
+        );
+
+        if (tui) tui.requestRender();
+      },
+    };
+  };
+}
+
 // Helper to run example forms with shared logic
 async function runDemoForm(
   name: string,
   example: string,
   ctx: any,
-  useOverlay: boolean = false
+  useOverlay: boolean = false,
+  persistentComponent?: any
 ) {
   if (!ctx.hasUI) {
     ctx.ui.notify("Error: UI not available", "error");
@@ -53,6 +126,17 @@ async function runDemoForm(
   const components = extractComponents(a2uiMessages);
   if (!components.size) {
     ctx.ui.notify("No components extracted", "error");
+    return;
+  }
+
+  // If using persistent overlay, just update it
+  if (useOverlay && persistentComponent) {
+    persistentComponent.updateForm(components, ctx.ui.theme, (data) => {
+      if (data) {
+        ctx.ui.notify(`${name} submitted (Ctrl+U to show)`, "info");
+      }
+    });
+    ctx.ui.notify(`${name} loaded - Press Ctrl+U to view`, "info");
     return;
   }
 
@@ -383,9 +467,13 @@ export default function (pi: ExtensionAPI) {
   // DISABLED FOR DEMO MODE:
   // pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
 
+  // Create persistent overlay component once
+  let persistentOverlayComponent: any = null;
+  let persistentOverlayUI: any = null;
+
   // === MAIN DEMO COMMAND ===
   pi.registerCommand("a2ui-demo", {
-    description: `/a2ui-demo [form|textarea|slider|tabs|accordion|toggle|numberinput|rating|combobox|datepicker|card|survey|settings|products|profile|team|showcase|dashboard|article|overlay]`,
+    description: `/a2ui-demo [form|textarea|slider|tabs|accordion|toggle|numberinput|rating|combobox|datepicker|card|survey|settings|products|profile|team|showcase|dashboard|article]`,
     handler: async (args, ctx) => {
       const demoType = args.trim() || "form";
       console.error(`[A2UI] /a2ui-demo ${demoType} handler called`);
@@ -397,7 +485,25 @@ export default function (pi: ExtensionAPI) {
       }
 
       console.error(`[A2UI] Running demo: ${demo.name}`);
-      await runDemoForm(demo.name, demo.example, ctx, true); // All demos in overlay
+
+      // Initialize persistent overlay on first demo
+      if (!persistentOverlayComponent) {
+        persistentOverlayComponent = createPersistentA2UIOverlay(ctx.ui.theme);
+        const task = ctx.ui.custom(persistentOverlayComponent, {
+          overlay: true,
+          overlayOptions: {
+            width: "80%",
+            maxHeight: "85%",
+            anchor: "center",
+            margin: { top: 2 },
+          },
+        });
+        // Don't await - let it run in background
+        task.catch(() => {});
+      }
+
+      // Update the persistent overlay with the new form
+      await runDemoForm(demo.name, demo.example, ctx, true, persistentOverlayComponent);
     },
   });
 
