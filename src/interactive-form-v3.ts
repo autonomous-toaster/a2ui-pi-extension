@@ -291,14 +291,14 @@ export function createA2UIFormComponent(
       const isRadioGroup = focusedComp?.component === "RadioGroup";
 
       // SPECIAL KEYS: Check before anything else
-      if (matchesKey(key, Key.Escape)) {
+      if (matchesKey(key, Key.escape)) {
         clearImageCache();
         done(null);
         return;
       }
 
-      if (matchesKey(key, Key.Tab)) {
-        if (matchesKey(key, Key.ShiftTab) || key.includes("shift")) {
+      if (matchesKey(key, Key.tab)) {
+        if (matchesKey(key, "shift+tab") || key.includes("shift")) {
           // Shift+Tab: previous field
           focusedButtonIndex = -1;
           focusedFieldIndex = (focusedFieldIndex - 1 + fieldIds.length) % fieldIds.length;
@@ -316,7 +316,7 @@ export function createA2UIFormComponent(
         return;
       }
 
-      if (matchesKey(key, Key.Enter)) {
+      if (matchesKey(key, Key.enter)) {
         if (focusedButtonIndex >= 0) {
           const buttonId = buttonIds[focusedButtonIndex];
           const btn = components.get(buttonId) as ButtonComponent;
@@ -349,7 +349,7 @@ export function createA2UIFormComponent(
       }
 
       // Arrow keys - Handle component-specific navigation
-      if (matchesKey(key, Key.ArrowDown)) {
+      if (matchesKey(key, Key.down)) {
         if (isList) {
           const state = fieldStates.get(fieldIds[focusedFieldIndex]);
           const comp = components.get(fieldIds[focusedFieldIndex]) as ListComponent;
@@ -373,7 +373,7 @@ export function createA2UIFormComponent(
         }
       }
 
-      if (matchesKey(key, Key.ArrowUp)) {
+      if (matchesKey(key, Key.up)) {
         if (isList) {
           const state = fieldStates.get(fieldIds[focusedFieldIndex]);
           state.scrollIndex = Math.max(state.scrollIndex - 1, 0);
@@ -403,7 +403,7 @@ export function createA2UIFormComponent(
         if (comp.component === "TextField") {
           // Handle backspace
           const isBackspace = 
-            matchesKey(key, Key.Backspace) || 
+            matchesKey(key, Key.backspace) || 
             key === '\x08' ||     // ASCII 8
             key === '\x7f' ||     // ASCII 127 (DEL)
             key === '\u0008';     // Unicode backspace
@@ -425,7 +425,7 @@ export function createA2UIFormComponent(
         }
 
         if (comp.component === "Checkbox") {
-          if (matchesKey(key, Key.Space)) {
+          if (matchesKey(key, Key.space)) {
             const current = fieldStates.get(currentField) || false;
             fieldStates.set(currentField, !current);
             refresh();
@@ -437,13 +437,13 @@ export function createA2UIFormComponent(
           const state = fieldStates.get(currentField);
           const rgComp = comp as RadioGroupComponent;
 
-          if (matchesKey(key, Key.Space)) {
+          if (matchesKey(key, Key.space)) {
             state.expanded = !state.expanded;
             refresh();
             return;
           }
 
-          if (matchesKey(key, Key.ArrowRight)) {
+          if (matchesKey(key, Key.right)) {
             const idx = rgComp.options.findIndex((o) => o.value === state.selected);
             if (idx < rgComp.options.length - 1) {
               state.selected = rgComp.options[idx + 1].value;
@@ -452,7 +452,7 @@ export function createA2UIFormComponent(
             return;
           }
 
-          if (matchesKey(key, Key.ArrowLeft)) {
+          if (matchesKey(key, Key.left)) {
             const idx = rgComp.options.findIndex((o) => o.value === state.selected);
             if (idx > 0) {
               state.selected = rgComp.options[idx - 1].value;
@@ -466,14 +466,14 @@ export function createA2UIFormComponent(
           const state = fieldStates.get(currentField);
           const sdComp = comp as SelectDropdownComponent;
 
-          if (matchesKey(key, Key.Space)) {
+          if (matchesKey(key, Key.space)) {
             state.expanded = !state.expanded;
             refresh();
             return;
           }
 
           if (state.expanded) {
-            if (matchesKey(key, Key.ArrowDown)) {
+            if (matchesKey(key, Key.down)) {
               const idx = sdComp.options.findIndex((o) => o.value === state.selected);
               if (idx < sdComp.options.length - 1) {
                 state.selected = sdComp.options[idx + 1].value;
@@ -482,7 +482,7 @@ export function createA2UIFormComponent(
               return;
             }
 
-            if (matchesKey(key, Key.ArrowUp)) {
+            if (matchesKey(key, Key.up)) {
               const idx = sdComp.options.findIndex((o) => o.value === state.selected);
               if (idx > 0) {
                 state.selected = sdComp.options[idx - 1].value;
