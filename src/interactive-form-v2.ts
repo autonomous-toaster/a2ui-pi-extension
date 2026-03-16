@@ -133,18 +133,21 @@ export function createA2UIFormComponent(
       // Tab or Down arrow - move focus forward
       if (matchesKey(data, Key.tab) || matchesKey(data, Key.down)) {
         if (focusedButtonIndex === -1) {
-          // In fields
-          if (fieldIds.length > 1) {
+          // In fields - move to next field or to buttons
+          if (focusedFieldIndex === fieldIds.length - 1) {
+            // At last field, move to buttons
+            if (buttonIds.length > 0) {
+              focusedButtonIndex = 0;
+              refresh();
+            }
+          } else {
+            // Move to next field
             focusedFieldIndex = (focusedFieldIndex + 1) % fieldIds.length;
             refresh();
-            return;
-          } else if (buttonIds.length > 0) {
-            focusedButtonIndex = 0;
-            refresh();
-            return;
           }
+          return;
         } else {
-          // In buttons - cycle
+          // In buttons - cycle through buttons
           focusedButtonIndex = (focusedButtonIndex + 1) % buttonIds.length;
           refresh();
           return;
@@ -154,24 +157,27 @@ export function createA2UIFormComponent(
       // Shift+Tab or Up arrow - move focus backward
       if (matchesKey(data, Key.shift("tab")) || matchesKey(data, Key.up)) {
         if (focusedButtonIndex === -1) {
-          // In fields - move to previous
-          if (fieldIds.length > 1) {
+          // In fields - move to previous field
+          if (focusedFieldIndex === 0 && buttonIds.length > 0) {
+            // At first field, move to last button
+            focusedButtonIndex = buttonIds.length - 1;
+            refresh();
+          } else if (fieldIds.length > 1) {
             focusedFieldIndex = (focusedFieldIndex - 1 + fieldIds.length) % fieldIds.length;
             refresh();
-            return;
           }
+          return;
         } else {
           // In buttons - move back to fields or prev button
           if (focusedButtonIndex === 0) {
             focusedButtonIndex = -1;
             focusedFieldIndex = fieldIds.length - 1;
             refresh();
-            return;
           } else {
             focusedButtonIndex--;
             refresh();
-            return;
           }
+          return;
         }
       }
 
@@ -195,10 +201,10 @@ export function createA2UIFormComponent(
             if (current.length > 0) {
               fieldValues.set(fieldId, current.slice(0, -1));
               refresh();
-              return;
             }
           }
         }
+        return;  // ← IMPORTANT: Always return after handling backspace
       }
 
       // Enter - submit or navigate
@@ -218,17 +224,19 @@ export function createA2UIFormComponent(
             done(null);
             return;
           }
-        } else if (fieldIds.length > 1) {
-          // In field, move to next
-          focusedFieldIndex = (focusedFieldIndex + 1) % fieldIds.length;
-          refresh();
-          return;
-        } else if (buttonIds.length > 0) {
-          // Only one field, move to buttons
-          focusedButtonIndex = 0;
-          refresh();
-          return;
+        } else {
+          // In a field
+          if (fieldIds.length > 1 && focusedFieldIndex < fieldIds.length - 1) {
+            // Move to next field (if not at last field)
+            focusedFieldIndex++;
+            refresh();
+          } else if (buttonIds.length > 0) {
+            // Move to first button (last field or only one field)
+            focusedButtonIndex = 0;
+            refresh();
+          }
         }
+        return;
       }
 
       // Escape - cancel
