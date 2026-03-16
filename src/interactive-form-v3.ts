@@ -220,9 +220,17 @@ export function createA2UIFormComponent(
             add(theme.fg("dim", `  ${imgState.error}`));
             add("");
           } else if (imgState.base64) {
-            // Use Kitty graphics protocol escape sequence
-            add(prefix + theme.fg("success", `[Image: ${label}]`));
-            add(kittyImageLine(imgState.base64, 40, 20));
+            // Use Kitty graphics protocol with size-based dimensions
+            const sizeMap: Record<string, [number, number]> = {
+              small: [16, 8],     // 16 cols x 8 rows - thumbnail
+              medium: [24, 12],   // 24 cols x 12 rows - card
+              large: [40, 20]     // 40 cols x 20 rows - full
+            };
+            const size = (image as ImageComponent).size || "medium";
+            const [width, height] = sizeMap[size] || [24, 12];
+            
+            add(prefix + theme.fg("success", `[${label}]`));
+            add(kittyImageLine(imgState.base64, width, height));
             add("");
           }
         }

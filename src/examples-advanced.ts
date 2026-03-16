@@ -42,8 +42,8 @@
  */
 
 /**
- * Example 1: Profile Card with Avatar Image
- * Shows how to use real images in forms
+ * Example 1: Profile Card with Avatar Thumbnail
+ * Compact profile display with small avatar image
  */
 export function getProfileCardExample(): string {
   return `
@@ -54,14 +54,20 @@ export function getProfileCardExample(): string {
     "surfaceId": "profile_card",
     "components": [
       {
+        "id": "profile_title",
+        "component": "Text",
+        "text": "User Profile",
+        "attributes": {"style": "bold"}
+      },
+      {
         "id": "avatar",
         "component": "Image",
         "source": {
           "type": "url",
-          "url": "https://avatars.githubusercontent.com/u/264779216?s=400&u=3b359b93a5bae1fa184b74a1b725058a62195493&v=4"
+          "url": "https://avatars.githubusercontent.com/u/264779216?s=100&u=3b359b93a5bae1fa184b74a1b725058a62195493&v=4"
         },
-        "size": "medium",
-        "alt": "User Avatar"
+        "size": "small",
+        "alt": "Avatar"
       },
       {
         "id": "username",
@@ -72,8 +78,7 @@ export function getProfileCardExample(): string {
       {
         "id": "email",
         "component": "Text",
-        "text": "user@github.com",
-        "attributes": {"textAlignment": "center"}
+        "text": "user@github.com"
       },
       {
         "id": "bio_label",
