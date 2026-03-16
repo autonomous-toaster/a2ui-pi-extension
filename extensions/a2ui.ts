@@ -364,25 +364,32 @@ export default function (pi: ExtensionAPI) {
   pi.on("message_end", async (event, ctx) => {
     // Only handle assistant messages
     if (!event.message || event.message.role !== "assistant" || !ctx.hasUI) {
+      console.error("[A2UI] Skipping - no message, wrong role, or no UI");
       return;
     }
 
     const message = event.message;
     const responseText = typeof message.content === "string" ? message.content : "";
     
+    console.error("[A2UI] message_end - content:", responseText.substring(0, 200));
     console.error("[A2UI] message_end - response length:", responseText.length);
     
     // Try to parse A2UI from response
     const { a2uiMessages, parseError } = parseA2UIResponse(responseText);
-    console.error("[A2UI] Parsed messages:", a2uiMessages.length, "Error:", parseError);
+    console.error("[A2UI] Parse result - messages:", a2uiMessages.length, "error:", parseError);
     
     if (!a2uiMessages.length) {
       // No A2UI found, that's OK - just continue
+      console.error("[A2UI] No A2UI messages found");
       return;
     }
 
+    console.error("[A2UI] Found", a2uiMessages.length, "A2UI messages");
+
     // Validate A2UI messages
     const validation = validateA2UIMessages(a2uiMessages);
+    console.error("[A2UI] Validation:", validation.valid ? "PASS" : "FAIL", validation.errors);
+    
     if (!validation.valid) {
       ctx.ui.notify(`A2UI validation error: ${validation.errors[0]}`, "error");
       return;
@@ -390,8 +397,11 @@ export default function (pi: ExtensionAPI) {
 
     // Extract components
     const components = extractComponents(a2uiMessages);
+    console.error("[A2UI] Extracted components:", components.size);
+    
     if (!components.size) {
       // No components, skip
+      console.error("[A2UI] No components extracted");
       return;
     }
 
@@ -399,7 +409,11 @@ export default function (pi: ExtensionAPI) {
 
     // Display the form
     const componentFn = createA2UIFormComponent(components, ctx.ui.theme);
+    console.error("[A2UI] Created component function, calling ctx.ui.custom()");
+    
     const formData = await ctx.ui.custom(componentFn);
+    
+    console.error("[A2UI] Form returned, data:", formData ? Object.keys(formData) : "null");
 
     // If form was submitted, add form data as a new user message
     if (formData) {
@@ -413,6 +427,7 @@ export default function (pi: ExtensionAPI) {
         await ctx.executeCommand("submit-user", formDataMessage);
       } catch (e) {
         // If executeCommand doesn't work, just notify
+        console.error("[A2UI] executeCommand error:", e);
         ctx.ui.notify("Form data: " + formDataMessage, "info");
       }
     }
