@@ -78,6 +78,15 @@ Handles system prompt injection:
 - `createA2UIBeforeAgentStartHandler()` - Event handler
 - `generateErrorFeedback()` - Error messages for LLM
 
+### examples.ts
+Pre-built example UI components:
+- 5 ready-to-use examples (contact form, products, dashboard, login, settings)
+- `EXAMPLE_CONTACT_FORM`, `EXAMPLE_PRODUCT_LIST`, etc. - Message arrays
+- `getExample()` - Get example by key
+- `listExamples()` - List all available examples
+- `getExampleInfo()` - Get example metadata
+- Examples exported to `/a2ui-examples` command
+
 ### adapter.ts
 Converts A2UI to pi-tui components:
 - `a2uiToTUI()` - Main conversion function

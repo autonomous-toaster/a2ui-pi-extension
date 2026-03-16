@@ -77,6 +77,20 @@ The tool generates the A2UI JSON and renders it:
 [ Registration Form UI will render here ]
 ```
 
+### Examples: View Pre-built UIs
+
+```bash
+# List all available examples
+/a2ui-examples
+
+# Render a specific example
+/a2ui-examples contact_form      # Contact form with name, email, message
+/a2ui-examples product_list      # Product cards with add-to-cart buttons
+/a2ui-examples dashboard         # Dashboard with stats cards
+/a2ui-examples login_form        # Login form with username/password
+/a2ui-examples settings_panel    # Settings with editable fields
+```
+
 ### Configuration Commands
 
 Configure the extension behavior:
@@ -148,6 +162,21 @@ Valid A2UI messages are converted to pi-tui components:
 - Column/Row → Container (with layout hints)
 
 The rendered UI displays in the terminal.
+
+## Quick Start: Pre-built Examples
+
+The extension includes 5 ready-to-use UI examples you can render instantly:
+
+```bash
+/a2ui-examples                 # List all examples
+/a2ui-examples contact_form   # Contact form with fields
+/a2ui-examples product_list   # Product listing
+/a2ui-examples dashboard      # Dashboard with stats
+/a2ui-examples login_form     # Login interface
+/a2ui-examples settings_panel # Settings editor
+```
+
+These examples demonstrate all core components and can be used as templates.
 
 ## Example Workflows
 
