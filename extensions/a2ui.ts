@@ -362,17 +362,19 @@ export default function (pi: ExtensionAPI) {
 
   // Register tool: display_a2ui_form
   // LLM calls this tool with A2UI JSON to display forms
-  pi.registerTool("display_a2ui_form", {
+  pi.registerTool({
+    name: "display_a2ui_form",
+    label: "Display A2UI Form",
     description: "Display an interactive A2UI form to the user",
-    input: Type.Object({
+    parameters: Type.Object({
       a2ui_json: Type.String({
         description: "A2UI JSON as a string (array of messages)",
       }),
     }),
-    handler: async (input, ctx) => {
+    async execute(toolCallId, params: any, signal, onUpdate, ctx) {
       console.error("[A2UI Tool] Received display_a2ui_form call");
       
-      const jsonStr = input.a2ui_json;
+      const jsonStr = params.a2ui_json;
       
       try {
         // Parse the JSON string
@@ -383,7 +385,8 @@ export default function (pi: ExtensionAPI) {
         const validation = validateA2UIMessages(a2uiMessages);
         if (!validation.valid) {
           return {
-            error: `Validation error: ${validation.errors.join(", ")}`,
+            content: [{ type: "text", text: `Validation error: ${validation.errors.join(", ")}` }],
+            details: {},
           };
         }
 
@@ -391,7 +394,8 @@ export default function (pi: ExtensionAPI) {
         const components = extractComponents(a2uiMessages);
         if (!components.size) {
           return {
-            error: "No components found in A2UI JSON",
+            content: [{ type: "text", text: "No components found in A2UI JSON" }],
+            details: {},
           };
         }
 
@@ -404,21 +408,26 @@ export default function (pi: ExtensionAPI) {
         if (formData) {
           console.error("[A2UI Tool] Form submitted with data");
           return {
-            success: true,
-            formData: formData,
+            content: [{ 
+              type: "text", 
+              text: `Form submitted. User provided: ${JSON.stringify(formData)}` 
+            }],
+            details: { formData },
           };
         } else {
           console.error("[A2UI Tool] Form cancelled by user");
           return {
-            success: false,
-            cancelled: true,
+            content: [{ type: "text", text: "User cancelled the form" }],
+            details: {},
           };
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.error("[A2UI Tool] Error:", message);
         return {
-          error: `Failed to display form: ${message}`,
+          content: [{ type: "text", text: `Failed to display form: ${message}` }],
+          details: {},
+          isError: true,
         };
       }
     },
