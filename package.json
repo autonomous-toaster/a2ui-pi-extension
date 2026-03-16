@@ -15,11 +15,7 @@
     "type": "git",
     "url": "https://github.com/autonomous-toaster/a2ui-pi-extension"
   },
-  "pi": {
-    "extensions": [
-      "./extensions"
-    ]
-  },
+  "main": "index.ts",
   "peerDependencies": {
     "@mariozechner/pi-coding-agent": "*",
     "@mariozechner/pi-ai": "*",
