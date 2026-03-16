@@ -77,6 +77,8 @@ async function runDemoForm(
   if (formData && !useOverlay) {
     ctx.ui.notify(`${name} submitted successfully`, "info");
   }
+
+  return formData; // Return form data to signal command completion
 }
 
 export default function (pi: ExtensionAPI) {
