@@ -129,7 +129,6 @@ export interface ComboboxComponent extends A2UIComponent {
   value?: string;
   placeholder?: string;
   options: Array<{ label: string; value: string }>;
-  allowCustom?: boolean;
   attributes?: {
     required?: boolean;
     disabled?: boolean;

@@ -296,11 +296,11 @@ const demoExamples: Record<string, { name: string; example: string }> = {
   {"version": "v0.9", "updateComponents": {
     "surfaceId": "combo_form",
     "components": [
-      {"id": "title_label", "component": "Text", "text": "Job Application - Type to search or enter custom"},
-      {"id": "country_label", "component": "Text", "text": "Country (type to filter)"},
-      {"id": "country_combo", "component": "Combobox", "label": "Country", "placeholder": "USA, Canada, UK...", "options": [{"label": "USA", "value": "usa"}, {"label": "Canada", "value": "ca"}, {"label": "UK", "value": "uk"}, {"label": "Australia", "value": "au"}], "allowCustom": true},
-      {"id": "role_label", "component": "Text", "text": "Role (type to filter)"},
-      {"id": "role_combo", "component": "Combobox", "label": "Role", "placeholder": "Engineer, Manager, Designer...", "options": [{"label": "Software Engineer", "value": "engineer"}, {"label": "Product Manager", "value": "manager"}, {"label": "Designer", "value": "designer"}, {"label": "Sales", "value": "sales"}], "allowCustom": true},
+      {"id": "title_label", "component": "Text", "text": "Job Application - Type to search options, arrow keys to select"},
+      {"id": "country_label", "component": "Text", "text": "Country (type to filter, arrows to select)"},
+      {"id": "country_combo", "component": "Combobox", "label": "Country", "value": "USA", "options": [{"label": "USA", "value": "usa"}, {"label": "Canada", "value": "ca"}, {"label": "UK", "value": "uk"}, {"label": "Australia", "value": "au"}]},
+      {"id": "role_label", "component": "Text", "text": "Role (type to filter, arrows to select)"},
+      {"id": "role_combo", "component": "Combobox", "label": "Role", "value": "Software Engineer", "options": [{"label": "Software Engineer", "value": "engineer"}, {"label": "Product Manager", "value": "manager"}, {"label": "Designer", "value": "designer"}, {"label": "Sales", "value": "sales"}]},
       {"id": "submit_btn", "component": "Button", "child": "submit_label"},
       {"id": "submit_label", "component": "Text", "text": "Apply"},
       {"id": "cancel_btn", "component": "Button", "child": "cancel_label"},

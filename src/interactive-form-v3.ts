@@ -578,9 +578,8 @@ export function createA2UIFormComponent(
           const currentValue = fieldValues.get(fieldIds[focusedFieldIndex]) || "";
           const matches = cb.options.filter(o => o.label.toLowerCase().includes(currentValue.toLowerCase()));
           if (matches.length > 0) {
-            const currentMatch = matches.find(m => m.value === currentValue);
-            const currentIdx = matches.indexOf(currentMatch || matches[0]);
-            const nextIdx = Math.min(currentIdx + 1, matches.length - 1);
+            const currentIdx = matches.findIndex(m => m.label === currentValue);
+            const nextIdx = (currentIdx + 1) % matches.length; // Wrap around
             fieldValues.set(fieldIds[focusedFieldIndex], matches[nextIdx].label);
             refresh();
           }
@@ -619,9 +618,8 @@ export function createA2UIFormComponent(
           const currentValue = fieldValues.get(fieldIds[focusedFieldIndex]) || "";
           const matches = cb.options.filter(o => o.label.toLowerCase().includes(currentValue.toLowerCase()));
           if (matches.length > 0) {
-            const currentMatch = matches.find(m => m.value === currentValue);
-            const currentIdx = matches.indexOf(currentMatch || matches[0]);
-            const prevIdx = Math.max(currentIdx - 1, 0);
+            const currentIdx = matches.findIndex(m => m.label === currentValue);
+            const prevIdx = (currentIdx - 1 + matches.length) % matches.length; // Wrap around
             fieldValues.set(fieldIds[focusedFieldIndex], matches[prevIdx].label);
             refresh();
           }
@@ -869,15 +867,21 @@ export function createA2UIFormComponent(
           // Backspace
           const isBackspace = key === "\x7F" || key === "\x08";
           if (isBackspace) {
-            fieldValues.set(currentField, currentValue.slice(0, -1));
+            const current = fieldValues.get(currentField) || "";
+            fieldValues.set(currentField, current.slice(0, -1));
             refresh();
             return;
           }
           
-          // Character input
+          // Character input - filter options to find matches
           if (key && key.length === 1 && key.charCodeAt(0) >= 32 && key.charCodeAt(0) < 127) {
-            fieldValues.set(currentField, currentValue + key);
-            refresh();
+            const testValue = (fieldValues.get(currentField) || "") + key;
+            // Only accept if it matches start of an option
+            const hasMatch = cb.options.some(o => o.label.toLowerCase().startsWith(testValue.toLowerCase()));
+            if (hasMatch) {
+              fieldValues.set(currentField, testValue);
+              refresh();
+            }
             return;
           }
         }
