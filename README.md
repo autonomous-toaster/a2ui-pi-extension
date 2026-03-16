@@ -79,17 +79,21 @@ The tool generates the A2UI JSON and renders it:
 
 ### Examples: View Pre-built UIs
 
+The extension includes a built-in tool to view and render pre-built example UIs:
+
 ```bash
 # List all available examples
-/a2ui-examples
+/a2ui_examples
 
 # Render a specific example
-/a2ui-examples contact_form      # Contact form with name, email, message
-/a2ui-examples product_list      # Product cards with add-to-cart buttons
-/a2ui-examples dashboard         # Dashboard with stats cards
-/a2ui-examples login_form        # Login form with username/password
-/a2ui-examples settings_panel    # Settings with editable fields
+/a2ui_examples contact_form      # Contact form with name, email, message
+/a2ui_examples product_list      # Product cards with add-to-cart buttons
+/a2ui_examples dashboard         # Dashboard with stats cards
+/a2ui_examples login_form        # Login form with username/password
+/a2ui_examples settings_panel    # Settings with editable fields
 ```
+
+Each example renders instantly in the terminal and demonstrates real component usage patterns.
 
 ### Configuration Commands
 
@@ -168,12 +172,12 @@ The rendered UI displays in the terminal.
 The extension includes 5 ready-to-use UI examples you can render instantly:
 
 ```bash
-/a2ui-examples                 # List all examples
-/a2ui-examples contact_form   # Contact form with fields
-/a2ui-examples product_list   # Product listing
-/a2ui-examples dashboard      # Dashboard with stats
-/a2ui-examples login_form     # Login interface
-/a2ui-examples settings_panel # Settings editor
+/a2ui_examples                 # List all examples
+/a2ui_examples contact_form   # Contact form with fields
+/a2ui_examples product_list   # Product listing
+/a2ui_examples dashboard      # Dashboard with stats
+/a2ui_examples login_form     # Login interface
+/a2ui_examples settings_panel # Settings editor
 ```
 
 These examples demonstrate all core components and can be used as templates.
