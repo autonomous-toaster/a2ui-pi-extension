@@ -134,7 +134,10 @@ export default function (pi: ExtensionAPI) {
         const surfaceId = extractSurfaceId(a2uiMessages);
         const components = extractComponents(a2uiMessages);
 
+        console.log("[A2UI] Extracted:", { surfaceId, componentCount: components.size, messageCount: a2uiMessages.length });
+
         if (!surfaceId || components.size === 0) {
+          console.log("[A2UI] ERROR: No surfaceId or components");
           return {
             content: [{ type: "text", text: "No components found in A2UI" }],
             details: { error: "No components" },
@@ -147,14 +150,19 @@ export default function (pi: ExtensionAPI) {
           details: { phase: "rendering" },
         });
 
+        console.log("[A2UI] About to show form via ctx.ui.custom()");
+
         const formData = await ctx.ui.custom<FormData | null>((tui, theme, _kb, done) => {
+          console.log("[A2UI] In ctx.ui.custom callback, creating form");
           const form = new InteractiveA2UIForm(components, theme);
 
           form.onSubmit = (data) => {
+            console.log("[A2UI] Form submitted with data", data);
             done(data);
           };
 
           form.onCancel = () => {
+            console.log("[A2UI] Form cancelled");
             done(null);
           };
 
@@ -168,21 +176,7 @@ export default function (pi: ExtensionAPI) {
           };
         });
 
-        // Step 6: Return collected form data
-        if (!formData) {
-          return {
-            content: [{ type: "text", text: "Form cancelled" }],
-            details: { cancelled: true },
-          };
-        }
-
-        // Convert to readable submission
-        const submission: Record<string, string> = {};
-        for (const [fieldId, value] of Object.entries(formData)) {
-          const field = components.get(fieldId);
-          const label = (field as any)?.label || fieldId;
-          submission[label] = value;
-        }
+        console.log("[A2UI] Form closed, formData:", formData);
 
         return {
           content: [

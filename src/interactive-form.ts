@@ -45,6 +45,8 @@ export class InteractiveA2UIForm {
   }
 
   render(width: number): string[] {
+    console.log("[InteractiveA2UIForm] render called, width:", width, "fieldIds:", this.fieldIds.length, "buttonIds:", this.buttonIds.length);
+    
     if (this.cachedRender && this.cachedWidth === width) {
       return this.cachedRender;
     }
