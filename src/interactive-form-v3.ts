@@ -460,6 +460,7 @@ export function createA2UIFormComponent(
       const isList = focusedComp?.component === "List";
       const isRadioGroup = focusedComp?.component === "RadioGroup";
       const isAccordion = focusedComp?.component === "Accordion";
+      const isCombobox = focusedComp?.component === "Combobox";
 
       // SPECIAL KEYS: Check before anything else
       if (matchesKey(key, Key.escape)) {
@@ -572,6 +573,18 @@ export function createA2UIFormComponent(
           fieldStates.set(fieldIds[focusedFieldIndex], state);
           refresh();
           return;
+        } else if (isCombobox) {
+          const cb = focusedComp as ComboboxComponent;
+          const currentValue = fieldValues.get(fieldIds[focusedFieldIndex]) || "";
+          const matches = cb.options.filter(o => o.label.toLowerCase().includes(currentValue.toLowerCase()));
+          if (matches.length > 0) {
+            const currentMatch = matches.find(m => m.value === currentValue);
+            const currentIdx = matches.indexOf(currentMatch || matches[0]);
+            const nextIdx = Math.min(currentIdx + 1, matches.length - 1);
+            fieldValues.set(fieldIds[focusedFieldIndex], matches[nextIdx].label);
+            refresh();
+          }
+          return;
         } else {
           focusedButtonIndex = -1;
           focusedFieldIndex = Math.min(focusedFieldIndex + 1, fieldIds.length - 1);
@@ -600,6 +613,18 @@ export function createA2UIFormComponent(
           state.selectedIndex = Math.max(state.selectedIndex - 1, 0);
           fieldStates.set(fieldIds[focusedFieldIndex], state);
           refresh();
+          return;
+        } else if (isCombobox) {
+          const cb = focusedComp as ComboboxComponent;
+          const currentValue = fieldValues.get(fieldIds[focusedFieldIndex]) || "";
+          const matches = cb.options.filter(o => o.label.toLowerCase().includes(currentValue.toLowerCase()));
+          if (matches.length > 0) {
+            const currentMatch = matches.find(m => m.value === currentValue);
+            const currentIdx = matches.indexOf(currentMatch || matches[0]);
+            const prevIdx = Math.max(currentIdx - 1, 0);
+            fieldValues.set(fieldIds[focusedFieldIndex], matches[prevIdx].label);
+            refresh();
+          }
           return;
         } else {
           focusedButtonIndex = -1;
@@ -846,32 +871,6 @@ export function createA2UIFormComponent(
           if (isBackspace) {
             fieldValues.set(currentField, currentValue.slice(0, -1));
             refresh();
-            return;
-          }
-          
-          // Arrow down: move to next matching option
-          if (matchesKey(key, Key.down)) {
-            const matches = cb.options.filter(o => o.label.toLowerCase().includes(currentValue.toLowerCase()));
-            if (matches.length > 0) {
-              const currentMatch = matches.find(m => m.value === currentValue);
-              const currentIdx = matches.indexOf(currentMatch || matches[0]);
-              const nextIdx = Math.min(currentIdx + 1, matches.length - 1);
-              fieldValues.set(currentField, matches[nextIdx].label);
-              refresh();
-            }
-            return;
-          }
-          
-          // Arrow up: move to previous matching option
-          if (matchesKey(key, Key.up)) {
-            const matches = cb.options.filter(o => o.label.toLowerCase().includes(currentValue.toLowerCase()));
-            if (matches.length > 0) {
-              const currentMatch = matches.find(m => m.value === currentValue);
-              const currentIdx = matches.indexOf(currentMatch || matches[0]);
-              const prevIdx = Math.max(currentIdx - 1, 0);
-              fieldValues.set(currentField, matches[prevIdx].label);
-              refresh();
-            }
             return;
           }
           
