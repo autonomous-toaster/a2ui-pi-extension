@@ -390,6 +390,9 @@ export default function (pi: ExtensionAPI) {
   // DISABLED FOR DEMO MODE:
   pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
 
+  // Track last displayed form for reopening
+  let lastFormComponents: Map<string, any> | null = null;
+
   // Register tool: display_a2ui_form
   // LLM calls this tool with A2UI JSON to display forms
   pi.registerTool({
@@ -431,6 +434,9 @@ export default function (pi: ExtensionAPI) {
 
         console.error("[A2UI Tool] Displaying form with", components.size, "components");
 
+        // Store components for later reopening via command
+        lastFormComponents = components;
+
         // Display form
         const componentFn = createA2UIFormComponent(components, ctx.ui.theme);
         const formData = await ctx.ui.custom(componentFn);
@@ -451,7 +457,8 @@ export default function (pi: ExtensionAPI) {
         } else {
           console.error("[A2UI Tool] Form cancelled by user");
           // When form is cancelled, return empty content
-          // User returns to chat without any tool result message
+          // User can use /reopen-form command to show the form again
+          ctx.ui.notify("Form cancelled. Use /reopen-form to show it again.", "info");
           return {
             content: [{ type: "text", text: "" }],
             details: {},
@@ -465,6 +472,37 @@ export default function (pi: ExtensionAPI) {
           details: {},
           isError: true,
         };
+      }
+    },
+  });
+
+  // Command to reopen the last cancelled form
+  pi.registerCommand("reopen-form", {
+    description: "Reopen the last cancelled A2UI form",
+    handler: async (args, ctx) => {
+      if (!lastFormComponents || lastFormComponents.size === 0) {
+        ctx.ui.notify("No form to reopen", "info");
+        return;
+      }
+
+      console.error("[A2UI] Reopening form via /reopen-form command");
+      
+      // Display the form again
+      const componentFn = createA2UIFormComponent(lastFormComponents, ctx.ui.theme);
+      const formData = await ctx.ui.custom(componentFn);
+
+      if (formData) {
+        console.error("[A2UI] Form resubmitted with data");
+        
+        // Show the compressed data
+        const compressedData = compressFormData(formData);
+        ctx.ui.notify(`Form data:\n${compressedData}`, "success");
+        
+        // Clear stored form after successful submission
+        lastFormComponents = null;
+      } else {
+        console.error("[A2UI] Form cancelled again");
+        ctx.ui.notify("Form cancelled. Use /reopen-form to try again.", "info");
       }
     },
   });
