@@ -1,6 +1,9 @@
 /**
  * A2UI to Pi-TUI Adapter
  * Converts A2UI components to pi-tui renderable components
+ * 
+ * Note: This is a simplified adapter for terminal display.
+ * Real interactivity would require integration with pi's tool system.
  */
 
 import {
@@ -72,38 +75,40 @@ function renderText(
   context: ComponentRenderContext,
 ): Component {
   const text = interpolateDataPath(component.text, context.dataModel);
-
-  const alignment = component.attributes?.textAlignment ?? "start";
-  const padding = alignment === "center" ? 1 : 0;
-
-  return new Text(text, padding, 0);
+  return new Text(text, 0, 0);
 }
 
 /**
  * Render Button component
- * Shows as inverted text
+ * Shows as bracketed text with styling
  */
 function renderButton(
   component: ButtonComponent,
   context: ComponentRenderContext,
 ): Component {
-  let label = `[ ${component.id} ]`;
+  let label = component.id;
 
   // Get child label if provided
   if (component.child) {
     const childComp = context.components.get(component.child);
     if (childComp && childComp.component === "Text") {
-      label = `[ ${(childComp as TextComponent).text} ]`;
+      label = (childComp as TextComponent).text;
     }
   }
 
-  // Style the button
-  let styledLabel = context.theme.inverted(label);
+  // Style button based on attributes
+  const isDisabled = component.attributes?.disabled ?? false;
+  const isPrimary = component.attributes?.primary ?? false;
 
-  if (component.attributes?.disabled) {
-    styledLabel = context.theme.fg("muted", label);
-  } else if (component.attributes?.primary) {
-    styledLabel = context.theme.fg("success", context.theme.bold(label));
+  let styledLabel: string;
+
+  if (isDisabled) {
+    styledLabel = context.theme.fg("muted", `[ ${label} ]`);
+  } else if (isPrimary) {
+    styledLabel = context.theme.fg("success", `[ ${label} ]`);
+  } else {
+    // Default button style
+    styledLabel = context.theme.fg("accent", `[ ${label} ]`);
   }
 
   return new Text(styledLabel, 1, 0);
@@ -111,45 +116,37 @@ function renderButton(
 
 /**
  * Render TextField component
+ * Shows as labeled input
  */
 function renderTextField(
   component: TextFieldComponent,
   context: ComponentRenderContext,
 ): Component {
+  const label = component.label ? `${component.label}:` : "";
   const value = component.value
     ? typeof component.value === "string"
       ? component.value
       : interpolateDataPath(component.value.path ?? "", context.dataModel)
     : "";
 
-  const label = component.label ? `${component.label}: ` : "";
-  const placeholder = component.placeholder ? `(${component.placeholder})` : "";
-
   const container = new Container();
 
+  // Add label if present
   if (label) {
-    container.addChild(new Text(label, 0, 0));
+    container.addChild(new Text(context.theme.fg("accent", label), 0, 0));
   }
 
-  // Create input field
-  const input = new Input(
-    (text) => {
-      // On input change - could emit event here
-    },
-    value,
-  );
-
-  container.addChild(input);
-
-  if (placeholder) {
-    container.addChild(new Text(context.theme.fg("muted", placeholder), 0, 0));
-  }
+  // Add input field (read-only in this adapter, for display only)
+  // In real interactive mode, this would be editable
+  const inputDisplay = value ? `> ${value}` : "> ";
+  container.addChild(new Text(context.theme.fg("muted", inputDisplay), 0, 0));
 
   return container;
 }
 
 /**
  * Render Card component
+ * Shows as boxed content with optional title
  */
 function renderCard(
   component: CardComponent,
@@ -158,12 +155,11 @@ function renderCard(
   const title = component.attributes?.title;
   const elevation = component.attributes?.elevation ?? 1;
 
-  const box = new Box(
-    elevation,
-    context.theme.fg("warning", title ? `┌ ${title} ┐` : "┌─┐"),
-  );
+  // Create box with border
+  const borderStyle = title ? `┌ ${title} ┐` : "┌─┐";
+  const box = new Box(elevation, context.theme.fg("warning", borderStyle));
 
-  // Add children
+  // Add children to box
   if (component.children && component.children.length > 0) {
     const container = new Container();
     for (const childId of component.children) {
@@ -186,19 +182,9 @@ function renderColumn(
   const container = new Container();
 
   if (component.children && component.children.length > 0) {
-    const spacing = component.attributes?.spacing ?? 0;
-
-    for (let i = 0; i < component.children.length; i++) {
-      const childId = component.children[i];
+    for (const childId of component.children) {
       const child = a2uiToTUI(childId, context);
       container.addChild(child);
-
-      // Add spacing between items
-      if (spacing > 0 && i < component.children.length - 1) {
-        for (let j = 0; j < spacing; j++) {
-          container.addChild(new Text("", 0, 0));
-        }
-      }
     }
   }
 
@@ -207,7 +193,7 @@ function renderColumn(
 
 /**
  * Render Row component (horizontal layout)
- * Note: Limited support in terminal - renders items vertically with horizontal context
+ * Note: Terminal limitation - renders items on separate lines
  */
 function renderRow(
   component: RowComponent,
@@ -216,22 +202,10 @@ function renderRow(
   const container = new Container();
 
   if (component.children && component.children.length > 0) {
-    // In terminal, we can't truly do horizontal layout
-    // Instead, render items separated by spaces/separators
-    const children: Component[] = [];
-
-    for (const childId of component.children) {
+    for (let i = 0; i < component.children.length; i++) {
+      const childId = component.children[i];
       const child = a2uiToTUI(childId, context);
-      children.push(child);
-    }
-
-    // For now, render vertically with separators
-    for (let i = 0; i < children.length; i++) {
-      container.addChild(children[i]);
-
-      if (i < children.length - 1) {
-        container.addChild(new Text("---", 0, 0));
-      }
+      container.addChild(child);
     }
   }
 
@@ -260,18 +234,17 @@ export function renderA2UISurface(
   surfaceId: string,
   context: ComponentRenderContext,
 ): Component {
-  // Find root component (first one created, or explicit root)
+  // Find root component - look for component with children first
   let rootId: string | undefined;
 
-  // Strategy 1: Look for component with children (container)
   for (const [id, comp] of context.components) {
-    if (("children" in comp || "child" in comp) && !rootId) {
+    if ("children" in comp && (comp as any).children?.length > 0) {
       rootId = id;
       break;
     }
   }
 
-  // Strategy 2: Use first component if nothing found
+  // Fallback: use first component
   if (!rootId && context.components.size > 0) {
     rootId = context.components.keys().next().value;
   }
