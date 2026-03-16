@@ -34,6 +34,7 @@ export function createA2UIFormComponent(
     const fieldValues = new Map<string, string>();
     let cachedLines: string[] | undefined;
     let cachedWidth: number | undefined;
+    let lastKeyReceived = ""; // DEBUG: track last keystroke
 
     // Scan for TextField and Button components
     for (const [id, comp] of components) {
@@ -123,6 +124,9 @@ export function createA2UIFormComponent(
       // Bottom border
       add(theme.fg("accent", "└" + "─".repeat(Math.max(0, width - 2)) + "┘"));
 
+      // DEBUG: Show last key
+      add(theme.fg("dim", `  [Last key: ${lastKeyReceived}]`));
+
       cachedLines = lines;
       cachedWidth = width;
       return lines;
@@ -130,6 +134,38 @@ export function createA2UIFormComponent(
 
     // === INPUT HANDLING ===
     function handleInput(data: string) {
+      lastKeyReceived = JSON.stringify(data); // DEBUG
+      
+      // IMPORTANT: Check special keys FIRST, before character input
+      // Otherwise backspace or other special keys might get caught by character handler
+      
+      // Backspace - delete character from focused field
+      const isBackspace = 
+        matchesKey(data, Key.backspace) || 
+        data === '\x08' ||     // ASCII 8
+        data === '\x7f' ||     // ASCII 127 (DEL)
+        data === '\u0008';     // Unicode backspace
+      
+      if (isBackspace) {
+        if (focusedButtonIndex === -1) {
+          const fieldId = fieldIds[focusedFieldIndex];
+          if (fieldId) {
+            const current = fieldValues.get(fieldId) || "";
+            if (current.length > 0) {
+              fieldValues.set(fieldId, current.slice(0, -1));
+              refresh();
+            }
+          }
+        }
+        return;
+      }
+      
+      // Escape - cancel
+      if (matchesKey(data, Key.escape)) {
+        done(null);
+        return;
+      }
+      
       // Tab or Down arrow - move focus forward
       if (matchesKey(data, Key.tab) || matchesKey(data, Key.down)) {
         if (focusedButtonIndex === -1) {
@@ -192,21 +228,6 @@ export function createA2UIFormComponent(
         }
       }
 
-      // Backspace - delete character from focused field
-      if (matchesKey(data, Key.backspace) || data === '\x08' || data === '\x7f') {
-        if (focusedButtonIndex === -1) {
-          const fieldId = fieldIds[focusedFieldIndex];
-          if (fieldId) {
-            const current = fieldValues.get(fieldId) || "";
-            if (current.length > 0) {
-              fieldValues.set(fieldId, current.slice(0, -1));
-              refresh();
-            }
-          }
-        }
-        return;  // ← IMPORTANT: Always return after handling backspace
-      }
-
       // Enter - submit or navigate
       if (matchesKey(data, Key.enter)) {
         if (focusedButtonIndex >= 0) {
@@ -236,12 +257,6 @@ export function createA2UIFormComponent(
             refresh();
           }
         }
-        return;
-      }
-
-      // Escape - cancel
-      if (matchesKey(data, Key.escape)) {
-        done(null);
         return;
       }
     }
