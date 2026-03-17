@@ -365,6 +365,7 @@ export default function (pi: ExtensionAPI) {
   ): Promise<any> {
     // Store components for reopen
     lastFormComponents = components;
+    console.error("[A2UI] Form stored, components:", components.size, "types:", Array.from(components.values()).map((c: any) => c.component).join(", "));
 
     // Prepare state ref for state updates
     const stateRef: { fieldValues: Map<string, string>; fieldStates: Map<string, any> } = {
@@ -384,6 +385,9 @@ export default function (pi: ExtensionAPI) {
     // Save state
     if (stateRef.fieldValues.size > 0 || stateRef.fieldStates.size > 0) {
       lastFormState = { ...stateRef };
+      console.error("[A2UI] State saved:", stateRef.fieldValues.size, "values,", stateRef.fieldStates.size, "states");
+    } else {
+      console.error("[A2UI] No state to save (form was likely cancelled empty)");
     }
 
     return formData;
@@ -513,6 +517,8 @@ export default function (pi: ExtensionAPI) {
   pi.registerCommand("reopen-form", {
     description: "Reopen the last cancelled A2UI form",
     handler: async (args, ctx) => {
+      console.error("[A2UI] /reopen-form called. Has components?", lastFormComponents?.size, "Has state?", lastFormState.fieldValues.size);
+      
       if (!lastFormComponents || lastFormComponents.size === 0) {
         ctx.ui.notify("No form to reopen", "info");
         return;
@@ -551,6 +557,7 @@ export default function (pi: ExtensionAPI) {
         // Save updated state
         if (stateRef.fieldValues.size > 0 || stateRef.fieldStates.size > 0) {
           lastFormState = { ...stateRef };
+          console.error("[A2UI] Updated state after recancel:", stateRef.fieldValues.size, "values");
         }
         
         ctx.ui.notify("Form cancelled. Use /reopen-form to try again.", "info");
