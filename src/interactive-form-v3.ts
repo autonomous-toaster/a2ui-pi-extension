@@ -52,10 +52,14 @@ interface ImageState {
  * - Show loading states while fetching
  * - Gracefully handle image errors
  * - Render using pi-tui Image component
+ * - Restore previous field values and states
+ * - Export state via stateRef for persistence
  */
 export function createA2UIFormComponent(
   components: Map<string, A2UIComponent>,
-  theme: any
+  theme: any,
+  initialState?: Map<string, any>,
+  stateRef?: { fieldValues: Map<string, string>; fieldStates: Map<string, any> }
 ) {
   return (tui: any, _theme: any, _kb: any, done: (data: FormData | null) => void) => {
     // === STATE ===
@@ -125,6 +129,25 @@ export function createA2UIFormComponent(
         }
       } else if (comp.component === "Button") {
         buttonIds.push(id);
+      }
+    }
+
+    // Restore initial state if provided
+    if (initialState) {
+      for (const [fieldId, value] of initialState) {
+        if (typeof value === "string") {
+          fieldValues.set(fieldId, value);
+        } else if (typeof value === "object") {
+          fieldStates.set(fieldId, value);
+        }
+      }
+    }
+
+    // Export state to stateRef for persistence (called after form closes)
+    function exportState() {
+      if (stateRef) {
+        stateRef.fieldValues = new Map(fieldValues);
+        stateRef.fieldStates = new Map(fieldStates);
       }
     }
 
@@ -479,6 +502,7 @@ export function createA2UIFormComponent(
       // SPECIAL KEYS: Check before anything else
       if (matchesKey(key, Key.escape)) {
         clearImageCache();
+        exportState(); // Save state before closing
         done(null);
         return;
       }
@@ -542,6 +566,7 @@ export function createA2UIFormComponent(
                 data[fieldId] = (fieldStates.get(fieldId) || {}).selected || "";
               }
             }
+            exportState(); // Save state before closing
             done(data);
             return;
           }
@@ -549,6 +574,7 @@ export function createA2UIFormComponent(
           // Cancel button - close without data
           if (btn?.id === "cancel_btn" || btn?.id?.includes("cancel")) {
             clearImageCache();
+            exportState(); // Save state before closing
             done(null);
             return;
           }

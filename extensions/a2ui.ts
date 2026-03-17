@@ -390,8 +390,12 @@ export default function (pi: ExtensionAPI) {
   // DISABLED FOR DEMO MODE:
   pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
 
-  // Track last displayed form for reopening
+  // Track last displayed form and its state for reopening
   let lastFormComponents: Map<string, any> | null = null;
+  let lastFormState: { fieldValues: Map<string, string>; fieldStates: Map<string, any> } = {
+    fieldValues: new Map(),
+    fieldStates: new Map(),
+  };
 
   // Register tool: display_a2ui_form
   // LLM calls this tool with A2UI JSON to display forms
@@ -437,15 +441,52 @@ export default function (pi: ExtensionAPI) {
         // Store components for later reopening via command
         lastFormComponents = components;
 
-        // Display form
-        const componentFn = createA2UIFormComponent(components, ctx.ui.theme);
+        // Reset state ref for this form display
+        const stateRef: { fieldValues: Map<string, string>; fieldStates: Map<string, any> } = {
+          fieldValues: new Map(),
+          fieldStates: new Map(),
+        };
+
+        // Display form (pass stateRef to capture state on close)
+        const componentFn = createA2UIFormComponent(
+          components,
+          ctx.ui.theme,
+          lastFormState.fieldValues.size > 0 ? lastFormState.fieldValues : undefined,
+          stateRef
+        );
         const formData = await ctx.ui.custom(componentFn);
+
+        // Save state to persistent storage
+        if (stateRef.fieldValues.size > 0 || stateRef.fieldStates.size > 0) {
+          lastFormState = { ...stateRef };
+          
+          // Also persist to session so it survives pi restarts
+          await pi.appendEntry({
+            type: "custom",
+            customType: "a2ui_form_state",
+            content: [
+              {
+                type: "text",
+                text: `Form state saved: ${Object.keys(Object.fromEntries(stateRef.fieldValues)).length} fields`,
+              },
+            ],
+            details: {
+              formState: {
+                fieldValues: Array.from(stateRef.fieldValues.entries()),
+                fieldStates: Array.from(stateRef.fieldStates.entries()),
+              },
+            },
+          });
+        }
 
         if (formData) {
           console.error("[A2UI Tool] Form submitted with data");
           
           // Compress formData into readable format to minimize context usage
           const compressedData = compressFormData(formData);
+          
+          // Clear state after successful submission
+          lastFormState = { fieldValues: new Map(), fieldStates: new Map() };
           
           return {
             content: [{ 
@@ -485,10 +526,21 @@ export default function (pi: ExtensionAPI) {
         return;
       }
 
-      console.error("[A2UI] Reopening form via /reopen-form command");
+      console.error("[A2UI] Reopening form via /reopen-form command with saved state");
       
-      // Display the form again
-      const componentFn = createA2UIFormComponent(lastFormComponents, ctx.ui.theme);
+      // Prepare state ref for state updates
+      const stateRef: { fieldValues: Map<string, string>; fieldStates: Map<string, any> } = {
+        fieldValues: new Map(),
+        fieldStates: new Map(),
+      };
+
+      // Display the form again with saved state
+      const componentFn = createA2UIFormComponent(
+        lastFormComponents,
+        ctx.ui.theme,
+        lastFormState.fieldValues.size > 0 ? lastFormState.fieldValues : undefined,
+        stateRef
+      );
       const formData = await ctx.ui.custom(componentFn);
 
       if (formData) {
@@ -498,10 +550,17 @@ export default function (pi: ExtensionAPI) {
         const compressedData = compressFormData(formData);
         ctx.ui.notify(`Form data:\n${compressedData}`, "success");
         
-        // Clear stored form after successful submission
+        // Clear stored form and state after successful submission
         lastFormComponents = null;
+        lastFormState = { fieldValues: new Map(), fieldStates: new Map() };
       } else {
         console.error("[A2UI] Form cancelled again");
+        
+        // Save updated state
+        if (stateRef.fieldValues.size > 0 || stateRef.fieldStates.size > 0) {
+          lastFormState = { ...stateRef };
+        }
+        
         ctx.ui.notify("Form cancelled. Use /reopen-form to try again.", "info");
       }
     },
