@@ -84,10 +84,8 @@ async function runDemoForm(
     return;
   }
 
-  // Always use regular form component (no overlay)
-  const componentFn = createA2UIFormComponent(components, ctx.ui.theme);
-
-  const formData = await ctx.ui.custom(componentFn);
+  // Use the shared form display function that tracks state
+  const formData = await displayFormAndTrackState(components, ctx);
 
   if (formData) {
     ctx.ui.notify(`${name} submitted successfully`, "info");
@@ -390,12 +388,43 @@ export default function (pi: ExtensionAPI) {
   // DISABLED FOR DEMO MODE:
   pi.on("before_agent_start", createA2UIBeforeAgentStartHandler({ enabled: true }));
 
-  // Track last displayed form and its state for reopening
+  // Track last displayed form and its state for reopening (shared between tool and demo commands)
   let lastFormComponents: Map<string, any> | null = null;
   let lastFormState: { fieldValues: Map<string, string>; fieldStates: Map<string, any> } = {
     fieldValues: new Map(),
     fieldStates: new Map(),
   };
+
+  // Wrapper function to run a form and track state
+  async function displayFormAndTrackState(
+    components: Map<string, any>,
+    ctx: any
+  ): Promise<any> {
+    // Store components for reopen
+    lastFormComponents = components;
+
+    // Prepare state ref for state updates
+    const stateRef: { fieldValues: Map<string, string>; fieldStates: Map<string, any> } = {
+      fieldValues: new Map(),
+      fieldStates: new Map(),
+    };
+
+    // Display form with previous state restored
+    const componentFn = createA2UIFormComponent(
+      components,
+      ctx.ui.theme,
+      lastFormState.fieldValues.size > 0 ? lastFormState.fieldValues : undefined,
+      stateRef
+    );
+    const formData = await ctx.ui.custom(componentFn);
+
+    // Save state
+    if (stateRef.fieldValues.size > 0 || stateRef.fieldStates.size > 0) {
+      lastFormState = { ...stateRef };
+    }
+
+    return formData;
+  }
 
   // Register tool: display_a2ui_form
   // LLM calls this tool with A2UI JSON to display forms
