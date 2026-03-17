@@ -558,6 +558,43 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
+  // Helper to run demo forms with shared state tracking logic
+  async function runDemoForm(
+    name: string,
+    example: string,
+    ctx: any
+  ) {
+    if (!ctx.hasUI) {
+      ctx.ui.notify("Error: UI not available", "error");
+      return;
+    }
+
+    const { a2uiMessages, parseError } = parseA2UIResponse(example);
+    if (!a2uiMessages.length) {
+      ctx.ui.notify(`Parse error: ${parseError}`, "error");
+      return;
+    }
+
+    const validation = validateA2UIMessages(a2uiMessages);
+    if (!validation.valid) {
+      ctx.ui.notify(`Validation error: ${validation.errors[0]}`, "error");
+      return;
+    }
+
+    const components = extractComponents(a2uiMessages);
+    if (!components.size) {
+      ctx.ui.notify("No components extracted", "error");
+      return;
+    }
+
+    // Use the shared form display function that tracks state
+    const formData = await displayFormAndTrackState(components, ctx);
+
+    if (formData) {
+      ctx.ui.notify(`${name} submitted successfully`, "info");
+    }
+  }
+
   // === MAIN DEMO COMMAND ===
   pi.registerCommand("a2ui-demo", {
     description: `/a2ui-demo [form|textarea|slider|tabs|accordion|toggle|numberinput|rating|combobox|datepicker|card|survey|settings|products|profile|team|showcase|dashboard|article]`,
